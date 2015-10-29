@@ -23,8 +23,9 @@ public class TelaJogo implements Screen {
     private OrthographicCamera camera;
     private Jogador classJogador;
     private Texture texturaBloco;
+    private Texture texturaBloco2;
     private Texture texturaAgua;
-    private Texture texturaChegada;
+    private Texture texturaFinal;
     private SpriteBatch batch;
     private boolean parado = false;
     private boolean esquerda = false;
@@ -51,7 +52,7 @@ public class TelaJogo implements Screen {
     private void texturasCaminho() {
         texturaBloco = new Texture("Texturas/bloco.png");
         texturaAgua = new Texture("Texturas/agua.png");
-        texturaChegada = new Texture("Texturas/chegada.png");
+        texturaFinal = new Texture("Texturas/final.png");
     }
 
     @Override
@@ -62,17 +63,13 @@ public class TelaJogo implements Screen {
         capiturarTeclas();
         atualizarCaminho();
         classJogador.atualizarJogador(delta);
-
-        batch.begin();
-        batch.draw(classJogador.getJogador(), classJogador.getX(), classJogador.getY());
-        batch.end();
     }
 
     private void tipoBlocos() {
-        criarCaminho(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
-        criarCaminho(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
-        criarCaminho(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA,BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO,BlocoTipo.CHEGADA, BlocoTipo.AGUA);
-        criarCaminho(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+        criarCaminho(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+        criarCaminho(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+        criarCaminho(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO,BlocoTipo.AGUA);
+        criarCaminho(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
     }
 
     public void criarCaminho(BlocoTipo... tipos) {
@@ -82,13 +79,13 @@ public class TelaJogo implements Screen {
             Vector2 posicao = new Vector2(linha.size, coluna);
             switch (tipo) {
                 case BLOCO:
-                    linha.add(new Bloco(new Sprite(texturaBloco), posicao, tipo, 1));
+                    linha.add(new Bloco(posicao, tipo, 1));
                     break;
                 case AGUA:
-                    linha.add(new Bloco(new Sprite(texturaAgua), posicao, tipo, -1));
+                    linha.add(new Bloco(posicao, tipo, -1));
                     break;
-                case CHEGADA:
-                    linha.add(new Bloco(new Sprite(texturaChegada), posicao, tipo, -1));
+                case FINAL:
+                    linha.add(new Bloco(posicao, tipo, -1));
                     break;
             }
         }
@@ -96,7 +93,7 @@ public class TelaJogo implements Screen {
     }
 
     private float initX = 80; private float initY = 200;
-
+    private Texture textura;
     private Rectangle recJogador = new Rectangle();
     private Rectangle recBloco = new Rectangle();
 
@@ -108,44 +105,59 @@ public class TelaJogo implements Screen {
             for (int j = 0; j < linha.size; j++) {
                 Bloco bloco = linha.get(j);
 
-                recBloco.set(initX + bloco.getPosicao().x * bloco.getBloco().getWidth(), initY + bloco.getPosicao().y * bloco.getBloco().getHeight(),
-                        bloco.getBloco().getWidth(), bloco.getBloco().getHeight());
-                batch.begin();
-                batch.draw(bloco.getBloco(), initX + bloco.getPosicao().x * bloco.getBloco().getWidth(),
-                        initY + bloco.getPosicao().y * bloco.getBloco().getHeight());
-                batch.end();
+                switch (bloco.getTipo()) {
+                    case BLOCO:
+                        textura = texturaBloco;
+                    break;
+                    case BLOCO2:
+                        textura = texturaBloco2;
+                    break;
+                    case AGUA:
+                        textura = texturaAgua;
+                        break;
+                    case FINAL:
+                        textura = texturaFinal;
+                        break;
+                }
+
+                recBloco.set(initX + bloco.getPosicao().x * textura.getWidth(), initY + bloco.getPosicao().y * textura.getHeight(),
+                        textura.getWidth(), textura.getHeight());
+
 
                 removerBlocos(bloco);
+
+                batch.begin();
+                batch.draw(textura, initX + bloco.getPosicao().x * textura.getWidth(),
+                        initY + bloco.getPosicao().y * textura.getHeight());
+                batch.end();
             }
         }
     }
 
-    private int xAnterior = 0; private int yAnterior = 1;
+    private int xAnterior = 1; private int yAnterior = 1;
     private void removerBlocos(Bloco bloco) {
         
         if (recBloco.contains(recJogador)) {
             int xAtual = (int) bloco.getPosicao().x;
             int yAtual = (int) bloco.getPosicao().y;
 
-            if (xAnterior < xAtual) {
-                xAnterior = xAtual - 1;
-                caminho.get(yAtual).get(xAnterior).setBloco(new Sprite(texturaAgua));
-            }
-
-            if (xAnterior == xAtual) {
-                xAtual = xAtual + 1;
-                caminho.get(yAtual).get(xAtual).setBloco(new Sprite(texturaAgua));
-            }
-
             if (yAnterior < yAtual) {
                 yAnterior = yAtual - 1;
-                caminho.get(yAnterior).get(xAtual).setBloco(new Sprite(texturaAgua));
+                caminho.get(yAnterior).get(xAtual).setTipo(BlocoTipo.AGUA);
                 yAnterior = yAnterior + 1;
-            }
-
-            if (yAnterior > yAtual) {
+                xAnterior = xAtual;
+            }else if (yAnterior > yAtual) {
                 yAnterior = yAtual + 1;
-                caminho.get(yAnterior).get(xAtual).setBloco(new Sprite(texturaAgua));
+                caminho.get(yAnterior).get(xAtual).setTipo(BlocoTipo.AGUA);
+                yAnterior = yAnterior - 1;
+                xAnterior = xAtual;
+            }else if (xAnterior < xAtual) {
+                xAnterior = xAtual - 1;
+                caminho.get(yAtual).get(xAnterior).setTipo(BlocoTipo.AGUA);
+                xAnterior = xAtual;
+            }else if (xAnterior > xAtual) {
+                caminho.get(yAtual).get(xAnterior).setTipo(BlocoTipo.AGUA);
+                xAnterior = xAtual;
             }
         }
     }

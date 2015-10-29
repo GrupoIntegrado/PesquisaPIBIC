@@ -5,7 +5,7 @@ package br.grupointegrado.Projeto;
  */
 public enum BlocoTipo {
     BLOCO,
+    BLOCO2,
     AGUA,
-    CHEGADA,
-    BLOCO2
+    FINAL
 }

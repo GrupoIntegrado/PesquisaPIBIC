@@ -13,6 +13,7 @@ public class Jogador {
 
     private Sprite jogador;
     private TelaJogo telajogo= new TelaJogo();
+    private SpriteBatch batch = new SpriteBatch();
     private Texture textDireita;
     private Texture textEsquerda;
     private Texture textCima;
@@ -102,6 +103,9 @@ public class Jogador {
             }
         }else jogador = new Sprite(texturaJogador);
 
+        batch.begin();
+        batch.draw(jogador, x, y);
+        batch.end();
     }
 
     public float getX() {
@@ -128,10 +132,6 @@ public class Jogador {
         return texturaJogador;
     }
 
-    public void setTexturaJogador(Texture texturaJogador) {
-        this.texturaJogador = texturaJogador;
-    }
-
     public void setJogador(Sprite jogador) {
         this.jogador = jogador;
     }
@@ -140,32 +140,15 @@ public class Jogador {
         return trocarTexturaDireita;
     }
 
-    public void setTrocarTexturaDireita(Array<Texture> trocarTexturaDireita) {
-        this.trocarTexturaDireita = trocarTexturaDireita;
-    }
-
     public Array<Texture> getTrocarTexturaEsquerda() {
         return trocarTexturaEsquerda;
-    }
-
-    public void setTrocarTexturaEsquerda(Array<Texture> trocarTexturaEsquerda) {
-        this.trocarTexturaEsquerda = trocarTexturaEsquerda;
     }
 
     public Array<Texture> getTrocarTexturaCima() {
         return trocarTexturaCima;
     }
 
-    public void setTrocarTexturaCima(Array<Texture> trocarTexturaCima) {
-        this.trocarTexturaCima = trocarTexturaCima;
-    }
-
     public Array<Texture> getTrocarTexturaBaixo() {
         return trocarTexturaBaixo;
     }
-
-    public void setTrocarTexturaBaixo(Array<Texture> trocarTexturaBaixo) {
-        this.trocarTexturaBaixo = trocarTexturaBaixo;
-    }
-
 }
