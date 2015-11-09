@@ -11,10 +11,9 @@ public class Bloco {
     private Vector2 posicao;
     private int vidaBloco;
 
-    public Bloco(Vector2 posicao, BlocoTipo  tipo, int vida) {
+    public Bloco(Vector2 posicao, BlocoTipo  tipo) {
         this.posicao = posicao;
         this.tipo = tipo;
-        this.vidaBloco = vida;
     }
 
     public Vector2 getPosicao() {
@@ -23,14 +22,6 @@ public class Bloco {
 
     public void setPosicao(Vector2 posicao) {
         this.posicao = posicao;
-    }
-
-    public int getVidaBloco() {
-        return vidaBloco;
-    }
-
-    public void setVidaBloco(int vidaBloco) {
-        this.vidaBloco = vidaBloco;
     }
 
     public BlocoTipo getTipo() {

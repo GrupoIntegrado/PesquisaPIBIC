@@ -3,7 +3,6 @@ package br.grupointegrado.Projeto;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
 /**
@@ -21,16 +20,16 @@ public class Jogador {
     private float intervalo_frames = 0;
     private final float tempo_intervalo = 0.1f;
     private int estagio = 0;
-    private float velocidade = 1;
+    private float velocidade = 100;
     private float x = 200;
-    private float y = 320;
+    private float y = 220;
     private Texture texturaJogador;
     private Array<Texture> trocarTexturaDireita = new Array<Texture>();
     private Array<Texture> trocarTexturaEsquerda = new Array<Texture>();
     private Array<Texture> trocarTexturaCima = new Array<Texture>();
     private Array<Texture> trocarTexturaBaixo = new Array<Texture>();
 
-    public void texturasJogador() {
+    public void initJogador() {
         texturaJogador = new Texture("Texturas/jogador.png");
 
         for (int textD = 1; textD <= 4; textD++) {
@@ -51,9 +50,60 @@ public class Jogador {
         }
     }
 
-    private int i = 0; private int j = 0; float posicaoX = x + 100; float posicaoY = y + 80;
-    public void atualizarJogador(float delta) {
+    float posicaoX = x + 100; float posicaoY = y + 80;
+    public void atualizarPosicaoJogador(float delta) {
+        if (telajogo.isDireita()) {
+            if (x < posicaoX) {
+                jogador = new Sprite(trocarTexturaDireita.get(estagio));
+                x = x + velocidade * delta;
+                y = y + jogador.getY();
+                jogador.setPosition(x, y);
+            }else {
+                telajogo.setDireita(false);
+                posicaoX += 100;
+            }
+        }else if (telajogo.isEsquerda()) {
+            if (x > posicaoX) {
+                jogador = new Sprite(trocarTexturaEsquerda.get(estagio));
+                x = x - velocidade * delta;
+                y = y + jogador.getY();
+                jogador.setPosition(x, y);
+            }else {
+                telajogo.setEsquerda(false);
+                posicaoX += - 100;
+            }
+        }else if (telajogo.isCima()) {
+            if (y < posicaoY) {
+                jogador = new Sprite(trocarTexturaCima.get(estagio));
+                x = x + jogador.getX();
+                y = y + velocidade * delta;
+                jogador.setPosition(x, y);
+            }else {
+                telajogo.setCima(false);
+                posicaoY += 80;
+            }
+        }else if (telajogo.isBaixo()) {
+            if (y > posicaoY) {
+                jogador = new Sprite(trocarTexturaBaixo.get(estagio));
+                x = x + jogador.getX();
+                y = y - velocidade * delta;
+                jogador.setPosition(x, y);
+            }else {
+                telajogo.setBaixo(false);
+                posicaoY += - 80;
+            }
+        }else {
+            jogador = new Sprite(texturaJogador);
+            jogador.setPosition(x, y);
+        }
 
+        atualizarEstagioJogador(delta);
+        batch.begin();
+        batch.draw(jogador, jogador.getX(), jogador.getY());
+        batch.end();
+    }
+
+    public void atualizarEstagioJogador(float delta) {
         if (telajogo.capiturarTeclas()) {
             if (intervalo_frames >= tempo_intervalo) {
                 intervalo_frames = 0;
@@ -64,64 +114,6 @@ public class Jogador {
                 intervalo_frames = intervalo_frames + delta;
             }
         }
-
-        if(telajogo.isEsquerda()) {
-            if (x > posicaoX) {
-                jogador = new Sprite(trocarTexturaEsquerda.get(estagio));
-                x = x - velocidade;
-                y = y + jogador.getY();
-            }else {
-                telajogo.setEsquerda(false);
-                posicaoX = posicaoX - 100;
-            }
-        } else if (telajogo.isDireita()) {
-            if  (x < posicaoX) {
-                jogador = new  Sprite(trocarTexturaDireita.get(estagio));
-                x = x + velocidade;
-                y = y + jogador.getY();
-            }else {
-                telajogo.setDireita(false);
-                posicaoX = posicaoX + 100;
-            }
-        }else if (telajogo.isCima()) {
-            if (y < posicaoY) {
-                jogador = new Sprite(trocarTexturaCima.get(estagio));
-                x = x + jogador.getX();
-                y = y + velocidade;
-            }else {
-                telajogo.setCima(false);
-                posicaoY = posicaoY + 80;
-            }
-        }else if (telajogo.isBaixo()) {
-            if (y > posicaoY) {
-                jogador = new Sprite(trocarTexturaBaixo.get(estagio));
-                x = x + jogador.getX();
-                y = y  - velocidade;
-            }else {
-                telajogo.setBaixo(false);
-                posicaoY = posicaoY - 80;
-            }
-        }else jogador = new Sprite(texturaJogador);
-
-        batch.begin();
-        batch.draw(jogador, x, y);
-        batch.end();
-    }
-
-    public float getX() {
-        return x;
-    }
-
-    public void setX(float x) {
-        this.x = x;
-    }
-
-    public float getY() {
-        return y;
-    }
-
-    public void setY(float y) {
-        this.y = y;
     }
 
     public Sprite getJogador() {
