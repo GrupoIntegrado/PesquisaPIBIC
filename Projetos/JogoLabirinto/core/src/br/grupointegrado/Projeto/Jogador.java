@@ -21,8 +21,8 @@ public class Jogador {
     private final float tempo_intervalo = 0.1f;
     private int estagio = 0;
     private float velocidade = 100;
-    private float x = 200;
-    private float y = 220;
+    private float x = 203;
+    private float y = 208;
     private Texture texturaJogador;
     private Array<Texture> trocarTexturaDireita = new Array<Texture>();
     private Array<Texture> trocarTexturaEsquerda = new Array<Texture>();
@@ -96,11 +96,6 @@ public class Jogador {
             jogador = new Sprite(texturaJogador);
             jogador.setPosition(x, y);
         }
-
-        atualizarEstagioJogador(delta);
-        batch.begin();
-        batch.draw(jogador, jogador.getX(), jogador.getY());
-        batch.end();
     }
 
     public void atualizarEstagioJogador(float delta) {
@@ -114,6 +109,14 @@ public class Jogador {
                 intervalo_frames = intervalo_frames + delta;
             }
         }
+    }
+
+    public void desenharJogador(float delta) {
+        atualizarPosicaoJogador(delta);
+        atualizarEstagioJogador(delta);
+        batch.begin();
+        batch.draw(jogador, jogador.getX(), jogador.getY());
+        batch.end();
     }
 
     public Sprite getJogador() {
@@ -143,4 +146,5 @@ public class Jogador {
     public Array<Texture> getTrocarTexturaBaixo() {
         return trocarTexturaBaixo;
     }
+
 }

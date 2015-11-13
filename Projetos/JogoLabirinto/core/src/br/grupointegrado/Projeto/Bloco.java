@@ -9,7 +9,6 @@ import com.badlogic.gdx.math.Vector2;
 public class Bloco {
     private BlocoTipo tipo;
     private Vector2 posicao;
-    private int vidaBloco;
 
     public Bloco(Vector2 posicao, BlocoTipo  tipo) {
         this.posicao = posicao;

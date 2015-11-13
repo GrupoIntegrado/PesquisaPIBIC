@@ -35,7 +35,6 @@ public class TelaJogo implements Screen {
     private boolean baixo = false;
     private boolean enter = false;
     private Array<Array<Bloco>> caminho = new Array<Array<Bloco>>();
-    private Array<String> sequenciaDirecao = new Array<String>();
 
     @Override
     public void show() {
@@ -55,23 +54,24 @@ public class TelaJogo implements Screen {
         texturaBloco = new Texture("Texturas/bloco.png");
         texturaBloco2 = new Texture("Texturas/bloco2.png");
         texturaAgua = new Texture("Texturas/agua.png");
-        texturaFinal = new Texture("Texturas/final.png");
+        //texturaFinal = new Texture("Texturas/final.png");
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
 
         capiturarTeclas();
         atualizarLabirinto();
-        jogador.atualizarPosicaoJogador(delta);
+        jogador.desenharJogador(delta);
     }
 
     private void estruturaLabirinto() {
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.FINAL, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
@@ -100,19 +100,17 @@ public class TelaJogo implements Screen {
         caminho.add(linha);
     }
 
-    private float initX = 80; private float initY = 100;
+    private float initX = 80; private float initY = 45;
     private Texture textura;
     private Rectangle recJogador = new Rectangle();
     private Rectangle recBloco = new Rectangle();
-
     private void atualizarLabirinto() {
-        recJogador.set(jogador.getJogador().getX(), jogador.getJogador().getY(), jogador.getJogador().getWidth()  / 2,
+        recJogador.set(jogador.getJogador().getX(), jogador.getJogador().getY(), jogador.getJogador().getWidth() / 2,
                 jogador.getJogador().getHeight() / 2);
-        for (int i = 0; i < caminho.size; i++) {
+        for (int i = caminho.size - 1; i >= 0 ; i--) {
             Array<Bloco> linha = caminho.get(i);
             for (int j = 0; j < linha.size; j++) {
                 Bloco bloco = linha.get(j);
-
                 switch (bloco.getTipo()) {
                     case BLOCO:
                         textura = texturaBloco;
@@ -128,21 +126,21 @@ public class TelaJogo implements Screen {
                         break;
                 }
 
-                recBloco.set(initX + bloco.getPosicao().x * textura.getWidth(), initY + bloco.getPosicao().y * textura.getHeight(),
+                recBloco.set(initX - 18 + bloco.getPosicao().x * textura.getWidth(), initY + 40 + bloco.getPosicao().y * (textura.getHeight() - 40),
                         textura.getWidth(), textura.getHeight());
-
 
                 atualizarBloco(bloco);
 
                 batch.begin();
                 batch.draw(textura, initX + bloco.getPosicao().x * textura.getWidth(),
-                        initY + bloco.getPosicao().y * textura.getHeight());
+                        initY + bloco.getPosicao().y * (textura.getHeight() - 40));
                 batch.end();
+
             }
         }
     }
 
-    private int xAnterior = 1; private int yAnterior = 1;
+    private int xAnterior = 1; private int yAnterior = 0;
     private int xAtual = 0; private int yAtual = 0;
     private void atualizarBloco(Bloco bloco) {
         
@@ -151,17 +149,17 @@ public class TelaJogo implements Screen {
             yAtual = (int) bloco.getPosicao().y;
 
             if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO2)) {
-                trocarBloco(BlocoTipo.BLOCO);
-            }else if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO)) {
-                trocarBloco(BlocoTipo.AGUA);
-            }else {
+                atualizarBloco(BlocoTipo.BLOCO);
+            } else if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO)) {
+                atualizarBloco(BlocoTipo.AGUA);
+            } else {
                 xAnterior = xAtual;
                 yAnterior = yAtual;
             }
         }
     }
 
-    private void trocarBloco(BlocoTipo tipo) {
+    private void atualizarBloco(BlocoTipo tipo) {
         if (yAnterior < yAtual) {
             yAnterior = yAtual - 1;
             caminho.get(yAnterior).get(xAtual).setTipo(tipo);
@@ -189,6 +187,7 @@ public class TelaJogo implements Screen {
             direcao = esquerda;
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             direita = true;
+            esquerda = false;
             direcao = direita;
         }else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             cima = true;
@@ -197,7 +196,6 @@ public class TelaJogo implements Screen {
             baixo = true;
             direcao = baixo;
         }
-
         return  direcao;
     }
 
@@ -245,22 +243,6 @@ public class TelaJogo implements Screen {
     }
 
 
-    public boolean isDirecao() {
-        return direcao;
-    }
-
-    public void setDirecao(boolean direcao) {
-        this.direcao = direcao;
-    }
-
-    public boolean isEnter() {
-        return enter;
-    }
-
-    public void setEnter(boolean enter) {
-        this.enter = enter;
-    }
-
     public boolean isEsquerda() {
         return esquerda;
     }
@@ -292,4 +274,6 @@ public class TelaJogo implements Screen {
     public void setBaixo(boolean baixo) {
         this.baixo = baixo;
     }
+
+
 }
