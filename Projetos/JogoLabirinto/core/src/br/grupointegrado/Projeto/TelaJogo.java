@@ -28,13 +28,19 @@ public class TelaJogo implements Screen {
     private Texture texturaBloco2;
     private Texture texturaAgua;
     private Texture texturaFinal;
+    private Texture texturaSplash;
+    private Sprite splash;
     private SpriteBatch batch;
+    private float intervalo_frames = 0;
+    private final float tempo_intervalo = 1 / 6f;
+    private int estagio = 0;
     private boolean esquerda = false;
     private boolean direita = false;
     private boolean  cima = false;
     private boolean baixo = false;
-    private boolean enter = false;
+    private boolean gameOver = false;
     private Array<Array<Bloco>> caminho = new Array<Array<Bloco>>();
+    private Array<Texture> trocarSplash = new Array<Texture>();
 
     @Override
     public void show() {
@@ -46,15 +52,23 @@ public class TelaJogo implements Screen {
         jogador.setJogador(new Sprite());
 
         initBloco();
+        initSplash();
         jogador.initJogador();
         estruturaLabirinto();
+    }
+
+    private void initSplash() {
+        for (int i = 1; i <= 6; i++ ) {
+            texturaSplash = new Texture("Texturas/splash-" + i + ".png");
+            trocarSplash.add(texturaSplash);
+        }
     }
 
     private void initBloco() {
         texturaBloco = new Texture("Texturas/bloco.png");
         texturaBloco2 = new Texture("Texturas/bloco2.png");
         texturaAgua = new Texture("Texturas/agua.png");
-        //texturaFinal = new Texture("Texturas/final.png");
+        texturaFinal = new Texture("Texturas/final.png");
     }
 
     @Override
@@ -62,18 +76,37 @@ public class TelaJogo implements Screen {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-
         capiturarTeclas();
-        atualizarLabirinto();
-        jogador.desenharJogador(delta);
+        desenharLabirinto();
+        if (!gameOver) {
+            jogador.desenharJogador(delta);
+        }else Splash(delta);
     }
+
+    private void Splash(float delta) {
+        if (intervalo_frames >= tempo_intervalo) {
+            intervalo_frames = 0;
+            estagio ++;
+            if (estagio > 5)
+                estagio = 0;
+        } else {
+            intervalo_frames = intervalo_frames + delta;
+        }
+
+        splash = new Sprite(trocarSplash.get(estagio));
+
+        batch.begin();
+        batch.draw(splash, jogador.getJogador().getX(), jogador.getJogador().getY());
+        batch.end();
+    }
+
 
     private void estruturaLabirinto() {
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.AGUA);
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.FINAL, BlocoTipo.AGUA);
         criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
     }
 
@@ -101,10 +134,14 @@ public class TelaJogo implements Screen {
     }
 
     private float initX = 80; private float initY = 45;
+
+    private int xAnterior = 1; private int yAnterior = 0;
+    private int xAtual = 0; private int yAtual = 0;
     private Texture textura;
     private Rectangle recJogador = new Rectangle();
     private Rectangle recBloco = new Rectangle();
-    private void atualizarLabirinto() {
+
+    private void desenharLabirinto() {
         recJogador.set(jogador.getJogador().getX(), jogador.getJogador().getY(), jogador.getJogador().getWidth() / 2,
                 jogador.getJogador().getHeight() / 2);
         for (int i = caminho.size - 1; i >= 0 ; i--) {
@@ -126,35 +163,31 @@ public class TelaJogo implements Screen {
                         break;
                 }
 
-                recBloco.set(initX - 18 + bloco.getPosicao().x * textura.getWidth(), initY + 40 + bloco.getPosicao().y * (textura.getHeight() - 40),
+                recBloco.set(initX + bloco.getPosicao().x * (textura.getWidth() - 10), initY + 42 + bloco.getPosicao().y * (textura.getHeight() - 42),
                         textura.getWidth(), textura.getHeight());
+                if (recBloco.contains(recJogador)) {
+                    xAtual = (int) bloco.getPosicao().x;
+                    yAtual = (int) bloco.getPosicao().y;
 
-                atualizarBloco(bloco);
+                    if (bloco.getTipo().equals(BlocoTipo.AGUA)) {
+                        gameOver = true;
+                    }
+
+                    if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO2)) {
+                        atualizarBloco(BlocoTipo.BLOCO);
+                    } else if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO)) {
+                        atualizarBloco(BlocoTipo.AGUA);
+                    } else {
+                        xAnterior = xAtual;
+                        yAnterior = yAtual;
+                    }
+                }
 
                 batch.begin();
                 batch.draw(textura, initX + bloco.getPosicao().x * textura.getWidth(),
-                        initY + bloco.getPosicao().y * (textura.getHeight() - 40));
+                        initY + bloco.getPosicao().y * (textura.getHeight() - 42));
                 batch.end();
 
-            }
-        }
-    }
-
-    private int xAnterior = 1; private int yAnterior = 0;
-    private int xAtual = 0; private int yAtual = 0;
-    private void atualizarBloco(Bloco bloco) {
-        
-        if (recBloco.contains(recJogador)) {
-            xAtual = (int) bloco.getPosicao().x;
-            yAtual = (int) bloco.getPosicao().y;
-
-            if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO2)) {
-                atualizarBloco(BlocoTipo.BLOCO);
-            } else if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO)) {
-                atualizarBloco(BlocoTipo.AGUA);
-            } else {
-                xAnterior = xAtual;
-                yAnterior = yAtual;
             }
         }
     }
@@ -227,6 +260,9 @@ public class TelaJogo implements Screen {
         texturaBloco.dispose();
         texturaBloco2.dispose();
         texturaAgua.dispose();
+        for (int i = 1; i <= 6; i++) {
+            texturaSplash.dispose();
+        }
         for (Texture texturasMovimento : jogador.getTrocarTexturaDireita()) {
             texturasMovimento.dispose();
         }
