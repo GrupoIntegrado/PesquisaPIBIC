@@ -10,9 +10,10 @@ import com.badlogic.gdx.utils.Array;
  */
 public class Jogador {
 
-    private Sprite jogador;
-    private TelaJogo telajogo= new TelaJogo();
+    private Sprite jogador = new Sprite();
+    private TelaJogo telajogo = new TelaJogo(null);
     private SpriteBatch batch = new SpriteBatch();
+    private Texture texturaJogador;
     private Texture textDireita;
     private Texture textEsquerda;
     private Texture textCima;
@@ -22,14 +23,13 @@ public class Jogador {
     private int estagio = 0;
     private float velocidade = 100;
     private float x = 203;
-    private float y = 208;
-    private Texture texturaJogador;
+    private float y = 206;
     private Array<Texture> trocarTexturaDireita = new Array<Texture>();
     private Array<Texture> trocarTexturaEsquerda = new Array<Texture>();
     private Array<Texture> trocarTexturaCima = new Array<Texture>();
     private Array<Texture> trocarTexturaBaixo = new Array<Texture>();
 
-    public void initJogador() {
+    public void texturas() {
         texturaJogador = new Texture("Texturas/jogador.png");
 
         for (int textD = 1; textD <= 4; textD++) {
@@ -47,6 +47,20 @@ public class Jogador {
         for (int textB = 1; textB <= 4; textB++) {
             textBaixo = new Texture("Texturas/baixo" + textB + ".png");
             trocarTexturaBaixo.add(textBaixo);
+        }
+    }
+
+
+    public void atualizarEstagioJogador(float delta) {
+        if (telajogo.capiturarTeclas()) {
+            if (intervalo_frames >= tempo_intervalo) {
+                intervalo_frames = 0;
+                estagio ++;
+                if (estagio > 3)
+                    estagio = 0;
+            } else {
+                intervalo_frames = intervalo_frames + delta;
+            }
         }
     }
 
@@ -98,22 +112,10 @@ public class Jogador {
         }
     }
 
-    public void atualizarEstagioJogador(float delta) {
-        if (telajogo.capiturarTeclas()) {
-            if (intervalo_frames >= tempo_intervalo) {
-                intervalo_frames = 0;
-                estagio ++;
-                if (estagio > 3)
-                    estagio = 0;
-            } else {
-                intervalo_frames = intervalo_frames + delta;
-            }
-        }
-    }
-
-    public void desenharJogador(float delta) {
-        atualizarPosicaoJogador(delta);
+    public void atualizarJogador(float delta) {
         atualizarEstagioJogador(delta);
+        atualizarPosicaoJogador(delta);
+
         batch.begin();
         batch.draw(jogador, jogador.getX(), jogador.getY());
         batch.end();
@@ -146,5 +148,4 @@ public class Jogador {
     public Array<Texture> getTrocarTexturaBaixo() {
         return trocarTexturaBaixo;
     }
-
 }

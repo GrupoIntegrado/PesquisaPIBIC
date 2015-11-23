@@ -2,7 +2,6 @@ package br.grupointegrado.Projeto;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -12,17 +11,15 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
-import java.awt.event.KeyEvent;
-
-import jdk.nashorn.internal.ir.BlockLexicalContext;
 
 
 /**
  * Created by Elito Fraga on 10/09/2015.
  */
-public class TelaJogo implements Screen {
+public class TelaJogo extends TelaBase {
 
     private OrthographicCamera camera;
+    private SpriteBatch batch;
     private Jogador jogador;
     private Texture texturaBloco;
     private Texture texturaBloco2;
@@ -30,7 +27,6 @@ public class TelaJogo implements Screen {
     private Texture texturaFinal;
     private Texture texturaSplash;
     private Sprite splash;
-    private SpriteBatch batch;
     private float intervalo_frames = 0;
     private final float tempo_intervalo = 1 / 6f;
     private int estagio = 0;
@@ -41,6 +37,11 @@ public class TelaJogo implements Screen {
     private boolean gameOver = false;
     private Array<Array<Bloco>> caminho = new Array<Array<Bloco>>();
     private Array<Texture> trocarSplash = new Array<Texture>();
+    int c = 0;
+
+    public TelaJogo(MainJogo jogo) {
+        super(jogo);
+    }
 
     @Override
     public void show() {
@@ -49,26 +50,24 @@ public class TelaJogo implements Screen {
         batch = new SpriteBatch();
 
         jogador = new Jogador();
-        jogador.setJogador(new Sprite());
 
-        initBloco();
-        initSplash();
-        jogador.initJogador();
-        estruturaLabirinto();
+        jogador.texturas();
+        initTexturas();
+        initNivel();
     }
 
-    private void initSplash() {
-        for (int i = 1; i <= 6; i++ ) {
-            texturaSplash = new Texture("Texturas/splash-" + i + ".png");
-            trocarSplash.add(texturaSplash);
-        }
-    }
+    private void initTexturas() {
 
-    private void initBloco() {
         texturaBloco = new Texture("Texturas/bloco.png");
         texturaBloco2 = new Texture("Texturas/bloco2.png");
         texturaAgua = new Texture("Texturas/agua.png");
         texturaFinal = new Texture("Texturas/final.png");
+
+        for (int i = 1; i <= 6; i++ ) {
+            texturaSplash = new Texture("Texturas/splash-" + i + ".png");
+            trocarSplash.add(texturaSplash);
+        }
+
     }
 
     @Override
@@ -77,17 +76,48 @@ public class TelaJogo implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         capiturarTeclas();
-        desenharLabirinto();
+        renderizarLabirinto();
+        atualizarPosicaoQueda();
         if (!gameOver) {
-            jogador.desenharJogador(delta);
-        }else Splash(delta);
+            jogador.atualizarJogador(delta);
+        }else splashDAgua(delta);
+
     }
 
-    private void Splash(float delta) {
+    private void reiniciarJogo() {
+        jogo.setScreen(new TelaJogo(jogo));
+    }
+
+    float posQuedaX = 0; float posQuedaY = 0;
+    private void atualizarPosicaoQueda() {
+
+        if (direita) {
+            direita = false;
+            posQuedaX = jogador.getJogador().getX() + jogador.getJogador().getWidth();
+            posQuedaY =  jogador.getJogador().getY();
+        }else if (esquerda) {
+            esquerda = false;
+            posQuedaX = jogador.getJogador().getX() - jogador.getJogador().getWidth();
+            posQuedaY =  jogador.getJogador().getY();
+        }else if (cima) {
+            cima = false;
+            posQuedaX = jogador.getJogador().getX();
+            posQuedaY = jogador.getJogador().getY() + jogador.getJogador().getHeight() / 2;
+        }else if (baixo) {
+            baixo = false;
+            posQuedaX = jogador.getJogador().getX();
+            posQuedaY = jogador.getJogador().getY() - jogador.getJogador().getHeight() / 1.5f;
+        }
+
+    }
+
+
+    private void splashDAgua(float delta) {
+
         if (intervalo_frames >= tempo_intervalo) {
             intervalo_frames = 0;
-            estagio ++;
-            if (estagio > 5)
+            estagio++;
+            if (estagio > 6)
                 estagio = 0;
         } else {
             intervalo_frames = intervalo_frames + delta;
@@ -96,18 +126,26 @@ public class TelaJogo implements Screen {
         splash = new Sprite(trocarSplash.get(estagio));
 
         batch.begin();
-        batch.draw(splash, jogador.getJogador().getX(), jogador.getJogador().getY());
+        batch.draw(splash, posQuedaX, posQuedaY);
         batch.end();
+
+        if (estagio == 5) {
+            reiniciarJogo();
+        }
     }
 
 
-    private void estruturaLabirinto() {
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.FINAL, BlocoTipo.AGUA);
-        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+    private void initNivel() {
+//        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+//        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+//        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+//        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+//        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.FINAL, BlocoTipo.AGUA);
+//        criarLabirinto(BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+
+        for (BlocoTipo[] linha : jogo.getNivelAtual().getBlocos()) {
+            criarLabirinto(linha[0], linha[1], linha[2], linha[3], linha[4]);
+        }
     }
 
     public void criarLabirinto(BlocoTipo... tipos) {
@@ -140,8 +178,7 @@ public class TelaJogo implements Screen {
     private Texture textura;
     private Rectangle recJogador = new Rectangle();
     private Rectangle recBloco = new Rectangle();
-
-    private void desenharLabirinto() {
+    private void renderizarLabirinto() {
         recJogador.set(jogador.getJogador().getX(), jogador.getJogador().getY(), jogador.getJogador().getWidth() / 2,
                 jogador.getJogador().getHeight() / 2);
         for (int i = caminho.size - 1; i >= 0 ; i--) {
@@ -163,7 +200,7 @@ public class TelaJogo implements Screen {
                         break;
                 }
 
-                recBloco.set(initX + bloco.getPosicao().x * (textura.getWidth() - 10), initY + 42 + bloco.getPosicao().y * (textura.getHeight() - 42),
+                recBloco.set(initX + bloco.getPosicao().x * (textura.getWidth() - 10), initY + 43 + bloco.getPosicao().y * (textura.getHeight() - 41),
                         textura.getWidth(), textura.getHeight());
                 if (recBloco.contains(recJogador)) {
                     xAtual = (int) bloco.getPosicao().x;
@@ -171,6 +208,10 @@ public class TelaJogo implements Screen {
 
                     if (bloco.getTipo().equals(BlocoTipo.AGUA)) {
                         gameOver = true;
+                    }
+
+                    if (caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.FINAL)) {
+                        jogo.kk = 2;
                     }
 
                     if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO2)) {
@@ -181,13 +222,13 @@ public class TelaJogo implements Screen {
                         xAnterior = xAtual;
                         yAnterior = yAtual;
                     }
+
                 }
 
                 batch.begin();
                 batch.draw(textura, initX + bloco.getPosicao().x * textura.getWidth(),
                         initY + bloco.getPosicao().y * (textura.getHeight() - 42));
                 batch.end();
-
             }
         }
     }
@@ -250,11 +291,6 @@ public class TelaJogo implements Screen {
     }
 
     @Override
-    public void hide() {
-
-    }
-
-    @Override
     public void dispose() {
         jogador.getTexturaJogador().dispose();
         texturaBloco.dispose();
@@ -310,6 +346,4 @@ public class TelaJogo implements Screen {
     public void setBaixo(boolean baixo) {
         this.baixo = baixo;
     }
-
-
 }
