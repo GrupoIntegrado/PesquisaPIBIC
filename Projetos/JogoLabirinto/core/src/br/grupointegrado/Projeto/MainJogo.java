@@ -1,12 +1,12 @@
 package br.grupointegrado.Projeto;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
 public class MainJogo extends Game{
 
 	private Array<Nivel> niveis = new Array<Nivel>();
-	int kk;
 
 	private int nivelAtual = 0;
 	
@@ -14,7 +14,6 @@ public class MainJogo extends Game{
 	public void create () {
 		criarNiveis();
 		setScreen(new TelaJogo(this));
-		System.out.println(kk);
 	}
 
 	public Array<Nivel> getNiveis() {
@@ -33,16 +32,37 @@ public class MainJogo extends Game{
 		return nivelAtual;
 	}
 
+	public void setNivelAtual(int nivelAtual) {
+		this.nivelAtual = nivelAtual;
+	}
+
 	private void criarNiveis() {
 		Nivel n = new Nivel();
-
-		n.addLinha(0, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
-		n.addLinha(1, BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.AGUA);
-		n.addLinha(2, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
-		n.addLinha(3, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
-		n.addLinha(4, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.FINAL, BlocoTipo.AGUA);
-		n.addLinha(5, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
-
+		n.setPosicaoInicial(new Vector2(203, 118));
+		n.addLinha(0, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(1, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(2, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+		n.addLinha(3, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+		n.addLinha(4, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO2, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+		n.addLinha(5, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.FINAL, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(6, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(7, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
 		niveis.add(n);
+
+		n = new Nivel();
+		n.setPosicaoInicial(new Vector2(406, 236));
+		n.addLinha(0, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(1, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(2, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+		n.addLinha(3, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+		n.addLinha(4, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO2, BlocoTipo.BLOCO2, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO, BlocoTipo.AGUA);
+		n.addLinha(5, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.BLOCO2, BlocoTipo.BLOCO, BlocoTipo.FINAL, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(6, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.BLOCO, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		n.addLinha(7, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA, BlocoTipo.AGUA);
+		niveis.add(n);
+
+
 	}
+
+
 }
