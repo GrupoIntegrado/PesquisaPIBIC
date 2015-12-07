@@ -11,8 +11,8 @@ import com.badlogic.gdx.utils.Array;
  */
 public class Jogador {
 
-    private static final float DESLOCAMENTO_X = 100;
-    private static final float DESLOCAMENTO_Y = 80;
+    private static float DESLOCAMENTO_X;
+    private static float DESLOCAMENTO_Y;
 
     private Sprite sprite;
     private Texture texturaJogador;
@@ -31,15 +31,18 @@ public class Jogador {
     private Array<Texture> trocarTexturaCima = new Array<Texture>();
     private Array<Texture> trocarTexturaBaixo = new Array<Texture>();
 
-    public Jogador(float posicaoX, float posicaoY){
-        initJogador(posicaoX, posicaoY);
+    public Jogador(float posicaoX, float posicaoY, float disX, float disY){
+        initJogador(posicaoX, posicaoY, disX, disY);
     }
 
-    public void initJogador(float posicaoX, float posicaoY) {
+    public void initJogador(float posicaoX, float posicaoY, float disX, float disY) {
         texturas();
         sprite = new Sprite(texturaJogador);
         sprite.setOrigin(0, 0);
+        posicaoX += - sprite.getWidth() / 2;
         sprite.setPosition(posicaoX, posicaoY);
+        DESLOCAMENTO_X = disX;
+        DESLOCAMENTO_Y = disY - 32;
     }
 
     public void texturas() {

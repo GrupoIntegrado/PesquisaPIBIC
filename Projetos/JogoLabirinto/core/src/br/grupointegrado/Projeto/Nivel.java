@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 public class Nivel {
 
     private Vector2 posicaoInicial = new Vector2();
-    private BlocoTipo[][] blocos = new BlocoTipo[8][8];
+    private BlocoTipo[][] blocos = new BlocoTipo[8][12];
 
     public Vector2 getPosicaoInicial() {
         return posicaoInicial;
