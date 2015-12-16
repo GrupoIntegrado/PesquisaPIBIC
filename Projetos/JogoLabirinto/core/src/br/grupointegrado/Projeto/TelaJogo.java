@@ -108,10 +108,12 @@ public class TelaJogo extends TelaBase {
         texturaAgua = new Texture("Texturas/agua.png");
         texturaFinal = new Texture("Texturas/final.png");
 
-        for (int i = 1; i <= 6; i++ ) {
+        for (int i = 1; i <= 6; i++) {
             texturaSplash = new Texture("Texturas/splash-" + i + ".png");
             trocarSplash.add(texturaSplash);
         }
+
+        splash = new Sprite(trocarSplash.get(0));
 
     }
 
@@ -130,12 +132,25 @@ public class TelaJogo extends TelaBase {
 
         capturarTeclas();
         renderizarLabirinto();
+
         if (!gameOver) {
             classJogador.atualizar(delta, batch);
-        }else {
-            atualizarPosicaoQueda();
-            splashDAgua(delta);
+        } else {
+            atualizarSplashJogador(delta);
+            if (estagio == 5) {
+                reiniciarJogo();
+            }
         }
+
+        if (blocoRemovido) {
+            atualizarSplashBloco(delta);
+            if (estagio == 5) {
+                estagio = 0;
+                blocoRemovido = false;
+            }
+        }
+
+
 
         palcoInformacoes.act(delta);
         palcoInformacoes.draw();
@@ -145,51 +160,76 @@ public class TelaJogo extends TelaBase {
         jogo.setScreen(new TelaJogo(jogo));
     }
 
-    float posQuedaX = 0; float posQuedaY = 0;
-    private void atualizarPosicaoQueda() {
+    private void atualizarPosicaoSplashJogador() {
+        float posQuedaX = 0;
+        float posQuedaY = 0;
 
-        switch (classJogador.getDirecao()){
+        switch (classJogador.getDirecao()) {
             case ESQUERDA:
                 posQuedaX = classJogador.getX() - classJogador.getWidth() / 3;
-                posQuedaY =  classJogador.getY();
+                posQuedaY = classJogador.getY();
+                splash.setPosition(posQuedaX, posQuedaY);
                 break;
             case DIREITA:
                 posQuedaX = classJogador.getX() + classJogador.getWidth() / 2;
-                posQuedaY =  classJogador.getY();
+                posQuedaY = classJogador.getY();
+                splash.setPosition(posQuedaX, posQuedaY);
                 break;
             case CIMA:
                 posQuedaX = classJogador.getX();
                 posQuedaY = classJogador.getY();
+                splash.setPosition(posQuedaX, posQuedaY);
                 break;
             case BAIXO:
                 posQuedaX = classJogador.getX();
                 posQuedaY = classJogador.getY() - classJogador.getHeight() / 6;
+                splash.setPosition(posQuedaX, posQuedaY);
                 break;
         }
 
     }
 
+    private void atualizarPosicaoSplashBloco() {
+        float posX = 0;
+        float posY = 0;
 
-    private void splashDAgua(float delta) {
+        posX = initX + blocoX * (texturaBloco.getWidth() + 3);
+        posY = initY + (blocoY + 1) * (texturaBloco.getHeight() - 33);
+        splash.setPosition(posX,posY);
 
+    }
+
+    private void atualizarEstagioSplash(float delta) {
         if (intervalo_frames >= tempo_intervalo) {
             intervalo_frames = 0;
-            estagio++;
-            if (estagio > 6)
+            estagio ++;
+            if (estagio > 5)
                 estagio = 0;
         } else {
             intervalo_frames = intervalo_frames + delta;
         }
+    }
 
-        splash = new Sprite(trocarSplash.get(estagio));
+    private void atualizarSplashJogador(float delta) {
+        atualizarEstagioSplash(delta);
+        atualizarPosicaoSplashJogador();
+
+        splash.setTexture(trocarSplash.get(estagio));
 
         batch.begin();
-        batch.draw(splash, posQuedaX, posQuedaY);
+        splash.draw(batch);
         batch.end();
+    }
 
-        if (estagio == 5) {
-            reiniciarJogo();
-        }
+    private void atualizarSplashBloco(float delta) {
+        atualizarEstagioSplash(delta);
+        atualizarPosicaoSplashBloco();
+
+        splash.setTexture(trocarSplash.get(estagio));
+
+        batch.begin();
+        splash.draw(batch);
+        batch.end();
     }
 
     private void initNivel() {
@@ -254,8 +294,6 @@ public class TelaJogo extends TelaBase {
                 recBloco.set(initX + bloco.getPosicao().x * textura.getWidth(), initY + 32 + bloco.getPosicao().y * (textura.getHeight() - 32),
                         textura.getWidth(), textura.getHeight());
 
-
-
                 if (recBloco.contains(recJogador)) {
                     xAtual = (int) bloco.getPosicao().x;
                     yAtual = (int) bloco.getPosicao().y;
@@ -293,33 +331,43 @@ public class TelaJogo extends TelaBase {
         }
     }
 
+    private int blocoX = xAnterior; private int blocoY = yAnterior;
+    private boolean blocoRemovido = false;
     private void atualizarBloco(BlocoTipo tipo) {
-        boolean blocoRemovido = false;
+        boolean removido = false;
 
         if (yAnterior < yAtual) {
             yAnterior = yAtual - 1;
             caminho.get(yAnterior).get(xAtual).setTipo(tipo);
-            yAnterior = yAnterior + 1;
-            blocoRemovido = true;
+            blocoX = xAtual;
+            blocoY = yAnterior;
+            removido = true;
         } else if (yAnterior > yAtual) {
             yAnterior = yAtual + 1;
             caminho.get(yAnterior).get(xAtual).setTipo(tipo);
-            yAnterior = yAnterior - 1;
-            blocoRemovido = true;
+            blocoX = xAtual;
+            blocoY = yAnterior;
+            removido = true;
         } else if (xAnterior < xAtual) {
             xAnterior = xAtual - 1;
             caminho.get(yAtual).get(xAnterior).setTipo(tipo);
-            xAnterior = xAtual;
-            blocoRemovido = true;
+            blocoX = xAnterior;
+            blocoY = yAtual;
+            removido = true;
         } else if (xAnterior > xAtual) {
             xAnterior = xAtual + 1;
             caminho.get(yAtual).get(xAnterior).setTipo(tipo);
-            xAnterior = xAtual;
-            blocoRemovido = true;
+            blocoX = xAnterior;
+            blocoY = yAtual;
+            removido = true;
         }
 
-        if (tipo.equals(BlocoTipo.AGUA) && blocoRemovido) {
+        xAnterior = xAtual;
+        yAnterior = yAtual;
+
+        if (tipo.equals(BlocoTipo.AGUA) && removido) {
             CONT_BLOCO_REMOVIDO += 1;
+            blocoRemovido = true;
         }
     }
 
