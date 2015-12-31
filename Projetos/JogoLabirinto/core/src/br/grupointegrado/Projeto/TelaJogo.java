@@ -2,6 +2,7 @@ package br.grupointegrado.Projeto;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -117,6 +118,7 @@ public class TelaJogo extends TelaBase {
 
     }
 
+    private int level;
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
@@ -127,7 +129,7 @@ public class TelaJogo extends TelaBase {
         lbContBlocos.setText(CONT_BLOCO_REMOVIDO + "/" + blocos_total);
 
         lbLevel.setPosition(camera.viewportWidth / 6, camera.viewportHeight - lbContBlocos.getHeight());
-        int level = jogo.getNivelAtualIndex() + 1;
+        level = jogo.getNivelAtualIndex() + 1;
         lbLevel.setText("LEVEL " + level);
 
         capturarTeclas();
@@ -154,6 +156,12 @@ public class TelaJogo extends TelaBase {
 
         palcoInformacoes.act(delta);
         palcoInformacoes.draw();
+    }
+
+    private void salvarLevel() {
+        Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
+        pref.putInteger("MAIOR_LEVEL", jogo.getNivelAtualIndex());
+        pref.flush();
     }
 
     private void reiniciarJogo() {
@@ -307,6 +315,7 @@ public class TelaJogo extends TelaBase {
                             int proxNivel = jogo.getNivelAtualIndex() + 1;
                             if (proxNivel < jogo.getNiveis().size) {
                                 jogo.setNivelAtual(proxNivel);
+                                salvarLevel();
                                 reiniciarJogo();
                             }
                         }
@@ -384,7 +393,6 @@ public class TelaJogo extends TelaBase {
             }
         }
     }
-
 
     @Override
     public void resize(int width, int height) {

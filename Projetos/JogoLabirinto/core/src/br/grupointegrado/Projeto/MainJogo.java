@@ -13,7 +13,7 @@ public class MainJogo extends Game{
 	@Override
 	public void create () {
 		criarNiveis();
-		setScreen(new TelaJogo(this));
+		setScreen(new TelaMenu(this));
 	}
 
 	public Array<Nivel> getNiveis() {
@@ -35,6 +35,7 @@ public class MainJogo extends Game{
 	public void setNivelAtual(int nivelAtual) {
 		this.nivelAtual = nivelAtual;
 	}
+
 
 	private void criarNiveis() {
 
@@ -78,6 +79,5 @@ public class MainJogo extends Game{
 		niveis.add(n);
 
 	}
-
 
 }
