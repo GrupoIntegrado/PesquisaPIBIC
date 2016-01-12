@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -24,13 +25,21 @@ public class TelaMenu extends TelaBase {
 
     private OrthographicCamera camera;
     private Stage palco;
+    private Image telaAviso;
     private ImageTextButton btnNovoJogo;
     private ImageTextButton btnContinuar;
     private Label lbTitulo;
+    private Label lbTituloAviso;
+    private Label lbTexto;
+    private BitmapFont fonteTexto;
     private BitmapFont fonteTitulo;
     private BitmapFont fonteBotoes;
+    private BitmapFont fonteTituloAviso;
     private Texture texturaBotao;
     private Texture texturaBotaoPressionado;
+    private Texture texturaTelaAviso;
+    private ImageTextButton btnSim;
+    private ImageTextButton btnNao;
 
 
     public TelaMenu(MainJogo jogo) {
@@ -46,8 +55,12 @@ public class TelaMenu extends TelaBase {
         initFontes();
         initLabels();
         initBotoes();
+        initAviso();
     }
 
+    private void initAviso() {
+        texturaTelaAviso = new Texture("Texturas/telaaviso.png");
+    }
 
 
     private void initBotoes() {
@@ -65,21 +78,58 @@ public class TelaMenu extends TelaBase {
         btnContinuar = new ImageTextButton("  Continuar  ", estilo);
         palco.addActor(btnContinuar);
 
+        btnSim = new ImageTextButton("  Sim  ", estilo);
+
+        btnNao = new ImageTextButton("  Nao  ", estilo);
+
+
         btnNovoJogo.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
-                pref.putInteger("MAIOR_LEVEL", 0);
-                pref.flush();
-                jogo.setScreen(new TelaJogo(jogo));
+                int maiorLevel = pref.getInteger("MAIOR_LEVEL", 0);
+                if (maiorLevel > 0) {
+                    telaAviso = new Image(texturaTelaAviso);
+
+                    float px = camera.viewportWidth / 2 - telaAviso.getWidth() / 2;
+                    float py = camera.viewportHeight / 2 - telaAviso.getHeight() / 2;
+
+                    telaAviso.setPosition(px, py);
+
+                    palco.addActor(telaAviso);
+                    palco.addActor(lbTituloAviso);
+                    palco.addActor(lbTexto);
+                    palco.addActor(btnSim);
+                    palco.addActor(btnNao);
+
+                    btnSim.addListener(new ClickListener() {
+                        public void clicked(InputEvent event, float x, float y) {
+                            Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
+                            pref.putInteger("MAIOR_LEVEL", 0);
+                            pref.flush();
+                            jogo.setScreen(new TelaJogo(jogo));
+                        }
+                    });
+
+                    btnNao.addListener(new ClickListener() {
+                        public void clicked(InputEvent event, float x, float y) {
+                            telaAviso.remove();
+                            lbTituloAviso.remove();
+                            lbTexto.remove();
+                            btnSim.remove();
+                            btnNao.remove();
+                        }
+                    });
+
+                }else jogo.setScreen(new TelaJogo(jogo));
             }
         });
 
         btnContinuar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Preferences preferencias = Gdx.app.getPreferences("JOGOBLOCOS");
-                int maiorLevel = preferencias.getInteger("MAIOR_LEVEL", 0);
+                Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
+                int maiorLevel = pref.getInteger("MAIOR_LEVEL", 0);
                 if (maiorLevel > 0) {
                     jogo.setNivelAtual(maiorLevel);
                     jogo.setScreen(new TelaJogo(jogo));
@@ -94,10 +144,10 @@ public class TelaMenu extends TelaBase {
         FreeTypeFontGenerator gerador = new FreeTypeFontGenerator(Gdx.files.internal("fonts/roboto.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter params = new FreeTypeFontGenerator.FreeTypeFontParameter();
         params.size = 48;
-        params.color = new Color(.25f, .25f, .85f, 1);
+        params.color =  Color.WHITE;
         params.shadowOffsetX = 2;
         params.shadowOffsetY = 2;
-        params.shadowColor = Color.BLACK;
+        params.shadowColor = Color.RED;
 
 
         fonteTitulo = gerador.generateFont(params);
@@ -107,6 +157,12 @@ public class TelaMenu extends TelaBase {
         params.color = Color.BLACK;
 
         fonteBotoes = gerador.generateFont(params);
+
+        params.size = 48;
+        fonteTituloAviso = gerador.generateFont(params);
+
+        params.size = 14;
+        fonteTexto = gerador.generateFont(params);
 
         gerador.dispose();
 
@@ -119,11 +175,18 @@ public class TelaMenu extends TelaBase {
 
         lbTitulo = new Label("Jogo dos Blocos", estilo);
         palco.addActor(lbTitulo);
+
+        estilo.font = fonteTituloAviso;
+        lbTituloAviso = new Label(" Aviso ", estilo);
+
+        estilo.font = fonteTexto;
+        lbTexto = new Label("   Caso a opcao escolhida seja 'Sim' voce \n " +
+                "perdera o seu jogo salvo, deseja continuar ?", estilo);
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(1f, 1f, 1f, 1f);
+        Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         atualizarLabels();
@@ -144,13 +207,34 @@ public class TelaMenu extends TelaBase {
         y = camera.viewportHeight / 2 - btnContinuar.getPrefWidth() + 140;
 
         btnContinuar.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - btnSim.getPrefWidth() - 20;
+        y = camera.viewportHeight / 2 - btnSim.getPrefWidth();
+
+        btnSim.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - btnNao.getPrefWidth() + 110;
+        y = camera.viewportHeight / 2 - btnNao.getPrefWidth() + 3;
+
+        btnNao.setPosition(x, y);
     }
+
 
     private void atualizarLabels() {
         float x = camera.viewportWidth / 2 - lbTitulo.getPrefWidth() / 2;
         float y = camera.viewportHeight - 100;
 
         lbTitulo.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - lbTituloAviso.getPrefWidth() / 2;
+        y = camera.viewportHeight - 240;
+
+        lbTituloAviso.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - 135;
+        y = camera.viewportHeight - 300;
+
+        lbTexto.setPosition(x, y);
 
     }
 
@@ -175,7 +259,9 @@ public class TelaMenu extends TelaBase {
         palco.dispose();
         fonteTitulo.dispose();
         fonteBotoes.dispose();
+        fonteTituloAviso.dispose();
         texturaBotao.dispose();
+        texturaTelaAviso.dispose();
         texturaBotaoPressionado.dispose();
     }
 }

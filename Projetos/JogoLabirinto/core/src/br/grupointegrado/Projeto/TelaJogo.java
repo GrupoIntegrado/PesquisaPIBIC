@@ -144,16 +144,6 @@ public class TelaJogo extends TelaBase {
             }
         }
 
-        if (blocoRemovido) {
-            atualizarSplashBloco(delta);
-            if (estagio == 5) {
-                estagio = 0;
-                blocoRemovido = false;
-            }
-        }
-
-
-
         palcoInformacoes.act(delta);
         palcoInformacoes.draw();
     }
@@ -197,16 +187,6 @@ public class TelaJogo extends TelaBase {
 
     }
 
-    private void atualizarPosicaoSplashBloco() {
-        float posX = 0;
-        float posY = 0;
-
-        posX = initX + blocoX * (texturaBloco.getWidth() + 3);
-        posY = initY + (blocoY + 1) * (texturaBloco.getHeight() - 33);
-        splash.setPosition(posX,posY);
-
-    }
-
     private void atualizarEstagioSplash(float delta) {
         if (intervalo_frames >= tempo_intervalo) {
             intervalo_frames = 0;
@@ -221,17 +201,6 @@ public class TelaJogo extends TelaBase {
     private void atualizarSplashJogador(float delta) {
         atualizarEstagioSplash(delta);
         atualizarPosicaoSplashJogador();
-
-        splash.setTexture(trocarSplash.get(estagio));
-
-        batch.begin();
-        splash.draw(batch);
-        batch.end();
-    }
-
-    private void atualizarSplashBloco(float delta) {
-        atualizarEstagioSplash(delta);
-        atualizarPosicaoSplashBloco();
 
         splash.setTexture(trocarSplash.get(estagio));
 
@@ -277,6 +246,8 @@ public class TelaJogo extends TelaBase {
     private Texture textura;
     private Rectangle recJogador = new Rectangle();
     private Rectangle recBloco = new Rectangle();
+    private int blocoX = xAtual - 1; private int blocoY = yAtual - 1;
+
     private void renderizarLabirinto() {
         recJogador.set(classJogador.getX(), classJogador.getY(), classJogador.getWidth() / 2,
                 classJogador.getHeight() / 2);
@@ -301,6 +272,7 @@ public class TelaJogo extends TelaBase {
 
                 recBloco.set(initX + bloco.getPosicao().x * textura.getWidth(), initY + 32 + bloco.getPosicao().y * (textura.getHeight() - 32),
                         textura.getWidth(), textura.getHeight());
+
 
                 if (recBloco.contains(recJogador)) {
                     xAtual = (int) bloco.getPosicao().x;
@@ -340,43 +312,35 @@ public class TelaJogo extends TelaBase {
         }
     }
 
-    private int blocoX = xAnterior; private int blocoY = yAnterior;
-    private boolean blocoRemovido = false;
     private void atualizarBloco(BlocoTipo tipo) {
         boolean removido = false;
 
         if (yAnterior < yAtual) {
             yAnterior = yAtual - 1;
             caminho.get(yAnterior).get(xAtual).setTipo(tipo);
-            blocoX = xAtual;
-            blocoY = yAnterior;
             removido = true;
         } else if (yAnterior > yAtual) {
             yAnterior = yAtual + 1;
             caminho.get(yAnterior).get(xAtual).setTipo(tipo);
-            blocoX = xAtual;
-            blocoY = yAnterior;
             removido = true;
         } else if (xAnterior < xAtual) {
             xAnterior = xAtual - 1;
             caminho.get(yAtual).get(xAnterior).setTipo(tipo);
-            blocoX = xAnterior;
-            blocoY = yAtual;
             removido = true;
         } else if (xAnterior > xAtual) {
             xAnterior = xAtual + 1;
             caminho.get(yAtual).get(xAnterior).setTipo(tipo);
-            blocoX = xAnterior;
-            blocoY = yAtual;
             removido = true;
         }
+
+        blocoX = xAnterior;
+        blocoY = yAnterior;
 
         xAnterior = xAtual;
         yAnterior = yAtual;
 
         if (tipo.equals(BlocoTipo.AGUA) && removido) {
             CONT_BLOCO_REMOVIDO += 1;
-            blocoRemovido = true;
         }
     }
 
