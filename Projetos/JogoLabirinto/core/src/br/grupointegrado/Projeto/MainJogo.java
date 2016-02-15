@@ -9,11 +9,13 @@ public class MainJogo extends Game{
 	private Array<Nivel> niveis = new Array<Nivel>();
 
 	private int nivelAtual = 0;
+	private boolean inicioJogo = false;
+	private boolean pauseJogo = false;
 	
 	@Override
 	public void create () {
 		criarNiveis();
-		setScreen(new TelaMenu(this));
+		setScreen(new TelaJogo(this));
 	}
 
 	public Array<Nivel> getNiveis() {
@@ -36,6 +38,21 @@ public class MainJogo extends Game{
 		this.nivelAtual = nivelAtual;
 	}
 
+	public boolean isInicioJogo() {
+		return inicioJogo;
+	}
+
+	public boolean isPauseJogo() {
+		return pauseJogo;
+	}
+
+	public void setPauseJogo(boolean pauseJogo) {
+		this.pauseJogo = pauseJogo;
+	}
+
+	public void setInicioJogo(boolean inicioJogo) {
+		this.inicioJogo = inicioJogo;
+	}
 
 	private void criarNiveis() {
 

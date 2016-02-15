@@ -13,8 +13,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 
@@ -31,6 +36,21 @@ public class TelaJogo extends TelaBase {
     private Texture texturaAgua;
     private Texture texturaFinal;
     private Texture texturaSplash;
+    private Image telaAviso;
+    private ImageTextButton btnNovoJogo;
+    private ImageTextButton btnContinuar;
+    private ImageTextButton btnVoltar;
+    private Stage palcoMenu;
+    private Label lbTituloAviso;
+    private Label lbTexto;
+    private BitmapFont fonteTexto;
+    private BitmapFont fonteBotoes;
+    private BitmapFont fonteTituloAviso;
+    private Texture texturaBotao;
+    private Texture texturaBotaoPressionado;
+    private Texture texturaTelaAviso;
+    private ImageTextButton btnSim;
+    private ImageTextButton btnNao;
     private BitmapFont fonte;
     private Label lbContBlocos;
     private Label lbLevel;
@@ -57,16 +77,167 @@ public class TelaJogo extends TelaBase {
 
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         palcoInformacoes = new Stage(new FillViewport(camera.viewportWidth, camera.viewportHeight, camera));
+        palcoMenu = new Stage(new FillViewport(camera.viewportWidth, camera.viewportHeight, camera));
+
+        Gdx.input.setInputProcessor(palcoMenu);
+        if (jogo.isInicioJogo()) {
+            Gdx.input.setInputProcessor(palcoInformacoes);
+        }
+
         batch = new SpriteBatch();
 
         initTexturas();
         initNivel();
         initFonte();
-        initInformacoes();
+        initLabels();
+        initBotoes();
         initConfigJogador();
     }
 
-    private void initInformacoes() {
+    private void initBotoes() {
+
+        ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
+        estilo.font = fonteBotoes;
+        estilo.up = new SpriteDrawable(new Sprite(texturaBotao));
+        estilo.down = new SpriteDrawable(new Sprite(texturaBotaoPressionado));
+
+        btnNovoJogo = new ImageTextButton(" Novo Jogo ", estilo);
+
+        btnContinuar = new ImageTextButton("  Continuar  ", estilo);
+
+        btnVoltar = new ImageTextButton("  Voltar  ", estilo);
+
+        if (!jogo.isInicioJogo()) {
+            palcoMenu.addActor(btnNovoJogo);
+            palcoMenu.addActor(btnContinuar);
+        }
+
+        palcoInformacoes.addActor(btnVoltar);
+
+        btnSim = new ImageTextButton("  Sim  ", estilo);
+
+        btnNao = new ImageTextButton("  Nao  ", estilo);
+
+        btnNovoJogo.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+
+                Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
+                int maiorLevel = pref.getInteger("MAIOR_LEVEL", 0);
+                if (maiorLevel > 0) {
+                    telaAviso = new Image(texturaTelaAviso);
+
+                    float px = camera.viewportWidth / 2 - telaAviso.getWidth() / 2;
+                    float py = camera.viewportHeight / 2 - telaAviso.getHeight() / 2;
+
+                    telaAviso.setPosition(px, py);
+
+                    palcoMenu.addActor(telaAviso);
+                    palcoMenu.addActor(lbTituloAviso);
+                    palcoMenu.addActor(lbTexto);
+                    palcoMenu.addActor(btnSim);
+                    palcoMenu.addActor(btnNao);
+
+                    btnSim.addListener(new ClickListener() {
+                        public void clicked(InputEvent event, float x, float y) {
+                            Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
+                            pref.putInteger("MAIOR_LEVEL", 0);
+                            pref.flush();
+                            jogo.setNivelAtual(0);
+                            jogo.setInicioJogo(true);
+                            reiniciarJogo();
+                        }
+                    });
+
+                    btnNao.addListener(new ClickListener() {
+                        public void clicked(InputEvent event, float x, float y) {
+                            telaAviso.remove();
+                            lbTituloAviso.remove();
+                            lbTexto.remove();
+                            btnSim.remove();
+                            btnNao.remove();
+                        }
+                    });
+
+                }else {
+                    jogo.setInicioJogo(true);
+                    reiniciarJogo();
+                }
+
+            }
+        });
+
+        btnContinuar.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
+                int maiorLevel = pref.getInteger("MAIOR_LEVEL", 0);
+                if (maiorLevel > 0) {
+                    jogo.setNivelAtual(maiorLevel);
+                    jogo.setInicioJogo(true);
+                    reiniciarJogo();
+                }
+                System.out.println(maiorLevel);
+            }
+        });
+
+        btnVoltar.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                palcoMenu.addActor(btnNovoJogo);
+                palcoMenu.addActor(btnContinuar);
+                jogo.setInicioJogo(false);
+                reiniciarJogo();
+            }
+        });
+    }
+
+    private void atualizarBotoes() {
+        float x = camera.viewportWidth / 2 - btnNovoJogo.getPrefWidth() / 2;
+        float y = camera.viewportHeight / 2 - btnNovoJogo.getPrefWidth() + 200;
+
+        btnNovoJogo.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - btnContinuar.getPrefWidth() / 2;
+        y = camera.viewportHeight / 2 - btnContinuar.getPrefWidth() + 140;
+
+        btnContinuar.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - btnSim.getPrefWidth() - 20;
+        y = camera.viewportHeight / 2 - btnSim.getPrefWidth();
+
+        btnSim.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - btnNao.getPrefWidth() + 110;
+        y = camera.viewportHeight / 2 - btnNao.getPrefWidth() + 3;
+
+        btnNao.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - btnVoltar.getPrefWidth() + 490;
+        y = camera.viewportHeight / 2 - btnVoltar.getPrefWidth() - 120;
+
+        btnVoltar.setPosition(x, y);
+    }
+
+
+    private void atualizarLabels() {
+        float x;
+        float y;
+
+        x = camera.viewportWidth / 2 - lbTituloAviso.getPrefWidth() / 2;
+        y = camera.viewportHeight - 240;
+
+        lbTituloAviso.setPosition(x, y);
+
+        x = camera.viewportWidth / 2 - 135;
+        y = camera.viewportHeight - 300;
+
+        lbTexto.setPosition(x, y);
+
+    }
+
+
+    private void initLabels() {
         Label.LabelStyle lbEstilo = new Label.LabelStyle();
         lbEstilo.font = fonte;
         lbEstilo.fontColor = Color.WHITE;
@@ -76,6 +247,13 @@ public class TelaJogo extends TelaBase {
 
         lbLevel = new Label("Level", lbEstilo);
         palcoInformacoes.addActor(lbLevel);
+
+        lbEstilo.font = fonteTituloAviso;
+        lbTituloAviso = new Label(" Aviso ", lbEstilo);
+
+        lbEstilo.font = fonteTexto;
+        lbTexto = new Label("   Caso a opcao escolhida seja 'Sim' voce \n " +
+                "perdera o seu jogo salvo, deseja continuar ?", lbEstilo);
 
     }
 
@@ -89,6 +267,21 @@ public class TelaJogo extends TelaBase {
 
         fonte = generator.generateFont(param);
 
+
+        param = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        param.size = 32;
+        param.color = Color.WHITE;
+
+        fonteBotoes = generator.generateFont(param);
+
+        param.size = 48;
+        param.color = Color.BLACK;
+
+        fonteTituloAviso = generator.generateFont(param);
+
+        param.size = 14;
+        fonteTexto = generator.generateFont(param);
+
         generator.dispose();
     }
 
@@ -97,7 +290,7 @@ public class TelaJogo extends TelaBase {
         float disAndarY = texturaBloco.getHeight();
 
         float posInicialJX = initX + jogo.getNivelAtual().getPosicaoInicial().x * texturaBloco.getWidth() - texturaBloco.getWidth() / 2;
-        float posInicialJY = initY + jogo.getNivelAtual().getPosicaoInicial().y * (((texturaBloco.getHeight() - 35) / 2) + 35);
+        float posInicialJY = initY + jogo.getNivelAtual().getPosicaoInicial().y * (texturaBloco.getHeight() - texturaBloco.getHeight() / 3);
 
         classJogador = new Jogador(posInicialJX, posInicialJY, disAndarX, disAndarY);
     }
@@ -109,6 +302,10 @@ public class TelaJogo extends TelaBase {
         texturaAgua = new Texture("Texturas/agua.png");
         texturaFinal = new Texture("Texturas/final.png");
 
+        texturaBotao = new Texture("Texturas/button.png");
+        texturaBotaoPressionado = new Texture("Texturas/button-down.png");
+        texturaTelaAviso = new Texture("Texturas/telaaviso.png");
+
         for (int i = 1; i <= 6; i++) {
             texturaSplash = new Texture("Texturas/splash-" + i + ".png");
             trocarSplash.add(texturaSplash);
@@ -118,12 +315,7 @@ public class TelaJogo extends TelaBase {
 
     }
 
-    private int level;
-    @Override
-    public void render(float delta) {
-        Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
+    private void informacaoBlocos() {
         lbContBlocos.setPosition(camera.viewportWidth / 2 - 19, camera.viewportHeight - lbContBlocos.getHeight());
         String blocos_total = "" + cont_blocos_remover;
         lbContBlocos.setText(CONT_BLOCO_REMOVIDO + "/" + blocos_total);
@@ -131,21 +323,37 @@ public class TelaJogo extends TelaBase {
         lbLevel.setPosition(camera.viewportWidth / 6, camera.viewportHeight - lbContBlocos.getHeight());
         level = jogo.getNivelAtualIndex() + 1;
         lbLevel.setText("LEVEL " + level);
+    }
 
-        capturarTeclas();
+    private int level;
+    @Override
+    public void render(float delta) {
+        Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        informacaoBlocos();
         renderizarLabirinto();
 
-        if (!gameOver) {
+        if (!gameOver && jogo.isInicioJogo()) {
             classJogador.atualizar(delta, batch);
-        } else {
+        }else if (gameOver) {
             atualizarSplashJogador(delta);
             if (estagio == 5) {
                 reiniciarJogo();
             }
         }
+        atualizarLabels();
+        atualizarBotoes();
 
-        palcoInformacoes.act(delta);
-        palcoInformacoes.draw();
+        if (jogo.isInicioJogo()) {
+            capturarTeclas();
+
+            palcoInformacoes.act(delta);
+            palcoInformacoes.draw();
+        }
+
+        palcoMenu.act(delta);
+        palcoMenu.draw();
     }
 
     private void salvarLevel() {
@@ -241,12 +449,10 @@ public class TelaJogo extends TelaBase {
         caminho.add(linha);
     }
 
-    private int xAnterior = 1; private int yAnterior = 0;
     private int xAtual = 0; private int yAtual = 0;
     private Texture textura;
     private Rectangle recJogador = new Rectangle();
     private Rectangle recBloco = new Rectangle();
-    private int blocoX = xAtual - 1; private int blocoY = yAtual - 1;
 
     private void renderizarLabirinto() {
         recJogador.set(classJogador.getX(), classJogador.getY(), classJogador.getWidth() / 2,
@@ -312,6 +518,7 @@ public class TelaJogo extends TelaBase {
         }
     }
 
+    private int xAnterior = 1; private int yAnterior = 0;
     private void atualizarBloco(BlocoTipo tipo) {
         boolean removido = false;
 
@@ -332,9 +539,6 @@ public class TelaJogo extends TelaBase {
             caminho.get(yAtual).get(xAnterior).setTipo(tipo);
             removido = true;
         }
-
-        blocoX = xAnterior;
-        blocoY = yAnterior;
 
         xAnterior = xAtual;
         yAnterior = yAtual;
@@ -380,6 +584,11 @@ public class TelaJogo extends TelaBase {
         texturaBloco.dispose();
         texturaBloco2.dispose();
         texturaAgua.dispose();
+        fonteBotoes.dispose();
+        fonteTituloAviso.dispose();
+        texturaBotao.dispose();
+        texturaTelaAviso.dispose();
+        texturaBotaoPressionado.dispose();
         for (int i = 1; i <= 6; i++) {
             texturaSplash.dispose();
         }
