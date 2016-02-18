@@ -36,6 +36,7 @@ public class TelaJogo extends TelaBase {
     private Texture texturaAgua;
     private Texture texturaFinal;
     private Texture texturaSplash;
+    private Texture texturaSplashBloco;
     private Image telaAviso;
     private ImageTextButton btnNovoJogo;
     private ImageTextButton btnContinuar;
@@ -59,14 +60,20 @@ public class TelaJogo extends TelaBase {
     private float initX = 0;
     private float initY = 0;
     private Sprite splash;
+    private Sprite splashBloco;
     private float intervalo_frames = 0;
+    private float tempo_intervaloBloco = 1 / 10f;
     private final float tempo_intervalo = 1 / 6f;
+    private float intervalo_framesBloco = 0f;
     private int estagio = 0;
+    private int estagioBloco = 0;
     private boolean gameOver = false;
     private int cont_blocos_remover = 0;
     private Jogador classJogador;
     private Array<Array<Bloco>> caminho = new Array<Array<Bloco>>();
     private Array<Texture> trocarSplash = new Array<Texture>();
+    private Array<Texture> trocarSplashBloco = new Array<Texture>();
+
 
     public TelaJogo(MainJogo jogo) {
         super(jogo);
@@ -79,10 +86,10 @@ public class TelaJogo extends TelaBase {
         palcoInformacoes = new Stage(new FillViewport(camera.viewportWidth, camera.viewportHeight, camera));
         palcoMenu = new Stage(new FillViewport(camera.viewportWidth, camera.viewportHeight, camera));
 
-        Gdx.input.setInputProcessor(palcoMenu);
         if (jogo.isInicioJogo()) {
             Gdx.input.setInputProcessor(palcoInformacoes);
-        }
+        }else Gdx.input.setInputProcessor(palcoMenu);
+
 
         batch = new SpriteBatch();
 
@@ -177,7 +184,6 @@ public class TelaJogo extends TelaBase {
                     jogo.setInicioJogo(true);
                     reiniciarJogo();
                 }
-                System.out.println(maiorLevel);
             }
         });
 
@@ -311,7 +317,13 @@ public class TelaJogo extends TelaBase {
             trocarSplash.add(texturaSplash);
         }
 
+        for (int i = 1; i <= 4; i++) {
+            texturaSplashBloco = new Texture("Texturas/splashb-" + i + ".png");
+            trocarSplashBloco.add(texturaSplashBloco);
+        }
+
         splash = new Sprite(trocarSplash.get(0));
+        splashBloco = new Sprite(trocarSplashBloco.get(0));
 
     }
 
@@ -333,25 +345,34 @@ public class TelaJogo extends TelaBase {
 
         informacaoBlocos();
         renderizarLabirinto();
-
-        if (!gameOver && jogo.isInicioJogo()) {
-            classJogador.atualizar(delta, batch);
-        }else if (gameOver) {
-            atualizarSplashJogador(delta);
-            if (estagio == 5) {
-                reiniciarJogo();
-            }
-        }
         atualizarLabels();
         atualizarBotoes();
 
         if (jogo.isInicioJogo()) {
-            capturarTeclas();
 
-            palcoInformacoes.act(delta);
+            if (bs) {
+                atualizarSplashBloco(delta);
+                if (estagioBloco == 3) {
+                    bs = false;
+                    estagioBloco = 0;
+                }
+            }
+
+            if (!gameOver) {
+                classJogador.atualizar(delta, batch);
+            }else {
+                atualizarSplashJogador(delta);
+                if (estagio == 3) {
+                    reiniciarJogo();
+                }
+            }
+
+            capturarTeclas();
             palcoInformacoes.draw();
         }
 
+
+        palcoInformacoes.act(delta);
         palcoMenu.act(delta);
         palcoMenu.draw();
     }
@@ -360,6 +381,33 @@ public class TelaJogo extends TelaBase {
         Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
         pref.putInteger("MAIOR_LEVEL", jogo.getNivelAtualIndex());
         pref.flush();
+    }
+
+
+    private void atualizarPosicaoSplashBloco() {
+        float x = initX + (controlePosX + 1) * texturaBloco.getWidth() - texturaBloco.getWidth() + 3;
+        float y = initY + (controlePosY + 1) * (texturaBloco.getHeight() - texturaBloco.getHeight() / 2.9f);
+        splashBloco.setPosition(x, y);
+    }
+
+    private void atualizarEstagioSplashBloco(float delta) {
+        if (intervalo_framesBloco >= tempo_intervaloBloco) {
+            intervalo_framesBloco = 0;
+            estagioBloco ++;
+        } else {
+            intervalo_framesBloco = intervalo_framesBloco + delta;
+        }
+    }
+
+    private void atualizarSplashBloco(float delta) {
+        atualizarEstagioSplashBloco(delta);
+        atualizarPosicaoSplashBloco();
+
+        splashBloco.setTexture(trocarSplashBloco.get(estagioBloco));
+
+        batch.begin();
+        splashBloco.draw(batch);
+        batch.end();
     }
 
     private void reiniciarJogo() {
@@ -518,33 +566,45 @@ public class TelaJogo extends TelaBase {
         }
     }
 
-    private int xAnterior = 1; private int yAnterior = 0;
+    private boolean bs = false;
+    private float controlePosX = 0; private float controlePosY = 0;
+    private int xAnterior = 0; private int yAnterior = 0;
     private void atualizarBloco(BlocoTipo tipo) {
         boolean removido = false;
 
         if (yAnterior < yAtual) {
             yAnterior = yAtual - 1;
             caminho.get(yAnterior).get(xAtual).setTipo(tipo);
+            controlePosX = xAtual;
+            controlePosY = yAnterior;
+            yAnterior = yAtual;
             removido = true;
         } else if (yAnterior > yAtual) {
             yAnterior = yAtual + 1;
             caminho.get(yAnterior).get(xAtual).setTipo(tipo);
+            controlePosX = xAtual;
+            controlePosY = yAnterior;
+            yAnterior = yAtual;
             removido = true;
         } else if (xAnterior < xAtual) {
             xAnterior = xAtual - 1;
             caminho.get(yAtual).get(xAnterior).setTipo(tipo);
+            controlePosX = xAnterior;
+            controlePosY = yAtual;
+            xAnterior = xAtual;
             removido = true;
         } else if (xAnterior > xAtual) {
             xAnterior = xAtual + 1;
             caminho.get(yAtual).get(xAnterior).setTipo(tipo);
+            controlePosX = xAnterior;
+            controlePosY = yAtual;
+            xAnterior = xAtual;
             removido = true;
         }
 
-        xAnterior = xAtual;
-        yAnterior = yAtual;
-
         if (tipo.equals(BlocoTipo.AGUA) && removido) {
             CONT_BLOCO_REMOVIDO += 1;
+            bs = true;
         }
     }
 

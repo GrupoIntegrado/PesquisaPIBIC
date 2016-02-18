@@ -10,7 +10,6 @@ public class MainJogo extends Game{
 
 	private int nivelAtual = 0;
 	private boolean inicioJogo = false;
-	private boolean pauseJogo = false;
 	
 	@Override
 	public void create () {
@@ -40,14 +39,6 @@ public class MainJogo extends Game{
 
 	public boolean isInicioJogo() {
 		return inicioJogo;
-	}
-
-	public boolean isPauseJogo() {
-		return pauseJogo;
-	}
-
-	public void setPauseJogo(boolean pauseJogo) {
-		this.pauseJogo = pauseJogo;
 	}
 
 	public void setInicioJogo(boolean inicioJogo) {
