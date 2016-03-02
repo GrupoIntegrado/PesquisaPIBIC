@@ -16,10 +16,6 @@ public class Jogador {
 
     private Sprite sprite;
     private Texture texturaJogador;
-    private Texture textDireita;
-    private Texture textEsquerda;
-    private Texture textCima;
-    private Texture textBaixo;
     private float intervalo_frames = 0;
     private final float tempo_intervalo = 0.1f;
     private int estagio = 0;
@@ -49,19 +45,19 @@ public class Jogador {
         texturaJogador = new Texture("Texturas/jogador.png");
 
         for (int textD = 1; textD <= 4; textD++) {
-            textDireita = new Texture("Texturas/direita" + textD + ".png");
+            Texture textDireita = new Texture("Texturas/direita" + textD + ".png");
             trocarTexturaDireita.add(textDireita);
         }
         for (int textE = 1; textE <= 4; textE++) {
-            textEsquerda = new Texture("Texturas/esquerda" + textE + ".png");
+            Texture textEsquerda = new Texture("Texturas/esquerda" + textE + ".png");
             trocarTexturaEsquerda.add(textEsquerda);
         }
         for (int textC = 1; textC <= 4; textC++) {
-            textCima = new Texture("Texturas/cima" + textC + ".png");
+            Texture textCima = new Texture("Texturas/cima" + textC + ".png");
             trocarTexturaCima.add(textCima);
         }
         for (int textB = 1; textB <= 4; textB++) {
-            textBaixo = new Texture("Texturas/baixo" + textB + ".png");
+            Texture textBaixo = new Texture("Texturas/baixo" + textB + ".png");
             trocarTexturaBaixo.add(textBaixo);
         }
     }

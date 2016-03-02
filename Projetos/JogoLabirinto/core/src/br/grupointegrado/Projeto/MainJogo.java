@@ -87,5 +87,4 @@ public class MainJogo extends Game{
 		niveis.add(n);
 
 	}
-
 }
