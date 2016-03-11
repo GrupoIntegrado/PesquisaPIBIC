@@ -13,13 +13,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 
@@ -29,7 +26,7 @@ import com.badlogic.gdx.utils.viewport.FillViewport;
  */
 public class TelaJogo extends TelaBase {
 
-    private OrthographicCamera camera;
+    private OrthographicCamera cameraInformacoes;
     private OrthographicCamera cameraMenu;
     private SpriteBatch pincel;
     private Texture texturaBloco;
@@ -57,7 +54,6 @@ public class TelaJogo extends TelaBase {
     private Label lbContBlocos;
     private Label lbLevel;
     private Stage palcoInformacoes;
-    private int CONT_BLOCO_REMOVIDO = 0;
     private float initX = 0;
     private float initY = 0;
     private Sprite splash;
@@ -82,9 +78,10 @@ public class TelaJogo extends TelaBase {
 
     @Override
     public void show() {
-        camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        cameraInformacoes = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        palcoInformacoes = new Stage(new FillViewport(cameraInformacoes.viewportWidth,
+                cameraInformacoes.viewportHeight, cameraInformacoes));
         cameraMenu = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        palcoInformacoes = new Stage(new FillViewport(camera.viewportWidth, camera.viewportHeight, camera));
         palcoMenu = new Stage(new FillViewport(cameraMenu.viewportWidth, cameraMenu.viewportHeight, cameraMenu));
 
         Gdx.input.setInputProcessor(palcoMenu);
@@ -93,9 +90,8 @@ public class TelaJogo extends TelaBase {
 
         initTexturas();
         initNivel();
-        initFonte();
-        initLabels();
-        initBotoes();
+        initFonteInformacoes();
+        initLabelsInformacoes();
         initJogador();
     }
 
@@ -104,10 +100,15 @@ public class TelaJogo extends TelaBase {
         Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        reenderizarBlocos();
-        atualizarBlocos();
-        classJogador.atualizar(delta, pincel);
         capturarTeclas();
+        reenderizaBlocos();
+        trocaBlocos();
+        validaNivel();
+        atualizar(delta);
+
+        atualizarInformacoes();
+        palcoInformacoes.act();
+        palcoInformacoes.draw();
     }
 
     private void initTexturas() {
@@ -151,7 +152,22 @@ public class TelaJogo extends TelaBase {
         }
     }
 
-    private void initLabels() {
+    private void atualizar(float delta) {
+        if (caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.AGUA)) {
+            gameOver = true;
+        }
+
+        if (!gameOver) {
+            classJogador.atualizar(delta, pincel);
+        }else {
+            reenderSplashJogador(delta);
+            if (estagio == 5) {
+                reiniciarJogo();
+            }
+        }
+    }
+
+    private void initLabelsInformacoes() {
         Label.LabelStyle lbEstilo = new Label.LabelStyle();
         lbEstilo.font = fonte;
         lbEstilo.fontColor = Color.WHITE;
@@ -161,17 +177,20 @@ public class TelaJogo extends TelaBase {
 
         lbLevel = new Label("Level", lbEstilo);
         palcoInformacoes.addActor(lbLevel);
-
-        lbEstilo.font = fonteTituloAviso;
-        lbTituloAviso = new Label(" Aviso ", lbEstilo);
-
-        lbEstilo.font = fonteTexto;
-        lbTexto = new Label("   Caso a opcao escolhida seja 'Sim' voce \n " +
-                "perdera o seu jogo salvo, deseja continuar ?", lbEstilo);
-
     }
 
-    private void initFonte() {
+    private int level;
+    private void atualizarInformacoes() {
+        lbContBlocos.setPosition(cameraInformacoes.viewportWidth / 2 - 19, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
+        String blocos_total = "" + cont_blocos_remover;
+        lbContBlocos.setText(cont_bloco_removido + "/" + blocos_total);
+
+        lbLevel.setPosition(cameraInformacoes.viewportWidth / 6, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
+        level = jogo.getNivelAtualIndex() + 1;
+        lbLevel.setText("LEVEL " + level);
+    }
+
+    private void initFonteInformacoes() {
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/roboto.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
         param.color = Color.WHITE;
@@ -181,187 +200,13 @@ public class TelaJogo extends TelaBase {
 
         fonte = generator.generateFont(param);
 
-
-        param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        param.size = 32;
-        param.color = Color.WHITE;
-
-        fonteBotoes = generator.generateFont(param);
-
-        param.size = 48;
-        param.color = Color.BLACK;
-
-        fonteTituloAviso = generator.generateFont(param);
-
-        param.size = 14;
-        fonteTexto = generator.generateFont(param);
-
         generator.dispose();
-    }
-
-    private void initBotoes() {
-
-        ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
-        estilo.font = fonteBotoes;
-        estilo.up = new SpriteDrawable(new Sprite(texturaBotao));
-        estilo.down = new SpriteDrawable(new Sprite(texturaBotaoPressionado));
-
-        btnNovoJogo = new ImageTextButton(" Novo Jogo ", estilo);
-
-        btnContinuar = new ImageTextButton("  Continuar  ", estilo);
-
-        btnVoltar = new ImageTextButton("  Voltar  ", estilo);
-
-        btnSim = new ImageTextButton("  Sim  ", estilo);
-
-        btnNao = new ImageTextButton("  Nao  ", estilo);
-
-        if (!jogo.isInicioJogo()) {
-            palcoMenu.addActor(btnNovoJogo);
-            palcoMenu.addActor(btnContinuar);
-        }else palcoMenu.addActor(btnVoltar);
-
-
-        btnNovoJogo.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-
-                Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
-                int maiorLevel = pref.getInteger("MAIOR_LEVEL", 0);
-                if (maiorLevel > 0) {
-                    telaAviso = new Image(texturaTelaAviso);
-
-                    float px = cameraMenu.viewportWidth / 2 - telaAviso.getWidth() / 2;
-                    float py = cameraMenu.viewportHeight / 2 - telaAviso.getHeight() / 2;
-
-                    telaAviso.setPosition(px, py);
-
-                    palcoMenu.addActor(telaAviso);
-                    palcoMenu.addActor(lbTituloAviso);
-                    palcoMenu.addActor(lbTexto);
-                    palcoMenu.addActor(btnSim);
-                    palcoMenu.addActor(btnNao);
-
-                    btnSim.addListener(new ClickListener() {
-                        public void clicked(InputEvent event, float x, float y) {
-                            Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
-                            pref.putInteger("MAIOR_LEVEL", 0);
-                            pref.flush();
-                            jogo.setNivelAtual(0);
-                            jogo.setInicioJogo(true);
-                            reiniciarJogo();
-                        }
-                    });
-
-                    btnNao.addListener(new ClickListener() {
-                        public void clicked(InputEvent event, float x, float y) {
-                            telaAviso.remove();
-                            lbTituloAviso.remove();
-                            lbTexto.remove();
-                            btnSim.remove();
-                            btnNao.remove();
-                        }
-                    });
-
-                } else {
-                    jogo.setInicioJogo(true);
-                    reiniciarJogo();
-                }
-
-            }
-        });
-
-        btnContinuar.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
-                int maiorLevel = pref.getInteger("MAIOR_LEVEL", 0);
-                if (maiorLevel > 0) {
-                    jogo.setNivelAtual(maiorLevel);
-                    jogo.setInicioJogo(true);
-                    reiniciarJogo();
-                }
-            }
-        });
-
-        btnVoltar.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                jogo.setInicioJogo(false);
-                reiniciarJogo();
-            }
-        });
-    }
-
-    private void atualizarLabels() {
-
-        lbTituloAviso.setPosition(cameraMenu.viewportWidth / 2 - lbTituloAviso.getPrefWidth() / 2,
-                cameraMenu.viewportHeight - 240);
-
-        lbTexto.setPosition(cameraMenu.viewportWidth / 2 - 135, cameraMenu.viewportHeight - 300);
-
-    }
-
-    private int level;
-    private void atualizarInformacao() {
-        lbContBlocos.setPosition(camera.viewportWidth / 2 - 19, camera.viewportHeight - lbContBlocos.getHeight());
-        String blocos_total = "" + cont_blocos_remover;
-        lbContBlocos.setText(CONT_BLOCO_REMOVIDO + "/" + blocos_total);
-
-        lbLevel.setPosition(camera.viewportWidth / 6, camera.viewportHeight - lbContBlocos.getHeight());
-        level = jogo.getNivelAtualIndex() + 1;
-        lbLevel.setText("LEVEL " + level);
-    }
-
-    private void atualizarBotoes() {
-
-        btnNovoJogo.setPosition(cameraMenu.viewportWidth / 2 - btnNovoJogo.getPrefWidth() / 2,
-                cameraMenu.viewportHeight / 2 - btnNovoJogo.getPrefHeight() + 70);
-
-        btnContinuar.setPosition(cameraMenu.viewportWidth / 2 - btnContinuar.getPrefWidth() / 2,
-                cameraMenu.viewportHeight / 2 - btnContinuar.getPrefHeight() + 20);
-
-        btnSim.setPosition(cameraMenu.viewportWidth / 2 - btnSim.getPrefWidth() - 20,
-                cameraMenu.viewportHeight / 2 - btnSim.getPrefHeight() - 40);
-
-        btnNao.setPosition(cameraMenu.viewportWidth / 2 - btnNao.getPrefWidth() + 110,
-                cameraMenu.viewportHeight / 2 - btnNao.getPrefHeight() - 40);
-
-        btnVoltar.setPosition(cameraMenu.viewportWidth / 2 - btnVoltar.getPrefWidth() + 490,
-                cameraMenu.viewportHeight / 2 - btnVoltar.getPrefHeight() - 200);
     }
 
     private void salvarLevel() {
         Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
         pref.putInteger("MAIOR_LEVEL", jogo.getNivelAtualIndex());
         pref.flush();
-    }
-
-
-    private void atualizarPosicaoSplashBloco() {
-        float x = initX + xAnterior * texturaBloco.getWidth() - texturaBloco.getWidth() + 3;
-        float y = initY + yAnterior * (texturaBloco.getHeight() - texturaBloco.getHeight() / 2.9f);
-        splashBloco.setPosition(x, y);
-    }
-
-    private void atualizarEstagioSplashBloco(float delta) {
-        if (intervalo_framesBloco >= tempo_intervaloBloco) {
-            intervalo_framesBloco = 0;
-            estagioBloco ++;
-        } else {
-            intervalo_framesBloco = intervalo_framesBloco + delta;
-        }
-    }
-
-    private void atualizarSplashBloco(float delta) {
-        atualizarEstagioSplashBloco(delta);
-        atualizarPosicaoSplashBloco();
-
-        splashBloco.setTexture(trocarSplashBloco.get(estagioBloco));
-
-        pincel.begin();
-        splashBloco.draw(pincel);
-        pincel.end();
     }
 
     private void reiniciarJogo() {
@@ -379,7 +224,7 @@ public class TelaJogo extends TelaBase {
                 splash.setPosition(posQuedaX, posQuedaY);
                 break;
             case DIREITA:
-                posQuedaX = classJogador.getX() + classJogador.getWidth() / 2;
+                posQuedaX = classJogador.getX() + classJogador.getWidth() / 3;
                 posQuedaY = classJogador.getY();
                 splash.setPosition(posQuedaX, posQuedaY);
                 break;
@@ -408,7 +253,7 @@ public class TelaJogo extends TelaBase {
         }
     }
 
-    private void atualizarSplashJogador(float delta) {
+    private void reenderSplashJogador(float delta) {
         atualizarEstagioSplash(delta);
         atualizarPosicaoSplashJogador();
 
@@ -419,7 +264,20 @@ public class TelaJogo extends TelaBase {
         pincel.end();
     }
 
-    public void criarLabirinto(BlocoTipo... tipos) {
+    private int cont_bloco_removido = 0;
+    private void validaNivel() {
+        if ((caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.FINAL)) &&
+                (cont_bloco_removido == cont_blocos_remover) && (classJogador.getDirecao().equals(Direcao.PARADO))) {
+            int proxNivel = jogo.getNivelAtualIndex() + 1;
+            if (proxNivel < jogo.getNiveis().size) {
+                jogo.setNivelAtual(proxNivel);
+                salvarLevel();
+                reiniciarJogo();
+            }
+        }
+    }
+
+    private void criarLabirinto(BlocoTipo... tipos) {
         Array<Bloco> linha = new Array<Bloco>();
         int coluna = caminho.size;
         for (BlocoTipo tipo : tipos) {
@@ -445,87 +303,84 @@ public class TelaJogo extends TelaBase {
         caminho.add(linha);
     }
 
-    private int xAtual = 0; private int yAtual = 0;
-    private Texture textura;
-    private Rectangle recJogador = new Rectangle();
-    private Rectangle recBloco = new Rectangle();
-    private Sprite spriteBloco;
-
-    private void reenderizarBlocos() {
-        recJogador.set(classJogador.getX(), classJogador.getY(), classJogador.getWidth() / 2,
-                classJogador.getHeight() / 2);
-
+    private void reenderizaBlocos() {
+        pincel.begin();
+        Sprite spriteBloco = new Sprite(texturaAgua);
         for (int i = caminho.size - 1; i >= 0 ; i--) {
             Array<Bloco> linha = caminho.get(i);
             for (int j = 0; j < linha.size; j++) {
-                Bloco bloco = linha.get(j);
+                Bloco bloco=linha.get(j);
                 switch (bloco.getTipo()) {
                     case BLOCO:
-                        textura = texturaBloco;
+                        spriteBloco.setTexture(texturaBloco);
                         break;
                     case BLOCO2:
-                        textura = texturaBloco2;
+                        spriteBloco.setTexture(texturaBloco2);
                         break;
                     case AGUA:
-                        textura = texturaAgua;
+                        spriteBloco.setTexture(texturaAgua);
                         break;
                     case FINAL:
-                        textura = texturaFinal;
+                        spriteBloco.setTexture(texturaFinal);
                         break;
                 }
-
-                spriteBloco = new Sprite(textura);
-
-                spriteBloco.setPosition(initX + bloco.getPosicao().x * spriteBloco.getWidth(),
-                        initY + bloco.getPosicao().y * (spriteBloco.getHeight() - 32));
-
-                recBloco.set(spriteBloco.getX(), spriteBloco.getY() + 32, spriteBloco.getWidth(), spriteBloco.getHeight());
-
-                controlarPosicao(bloco);
-
-                pincel.begin();
+                atualizarBlocos(bloco, spriteBloco);
                 spriteBloco.draw(pincel);
-                pincel.end();
             }
         }
+        pincel.end();
     }
 
-    private void atualizarBlocos() {
-        if (xAtual > xAnterior || xAtual < xAnterior) {
-            if (caminho.get(yAtual).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO2)) {
-                caminho.get(yAtual).get(xAnterior).setTipo(BlocoTipo.BLOCO);
-            } else if (caminho.get(yAtual).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO)) {
-                caminho.get(yAtual).get(xAnterior).setTipo(BlocoTipo.AGUA);
+    private void atualizarBlocos(Bloco bloco, Sprite spriteBloco) {
+        Rectangle recJogador = new Rectangle();
+        Rectangle recBloco = new Rectangle();
+
+        recJogador.set(classJogador.getX(), classJogador.getY(), classJogador.getWidth() / 2,
+            classJogador.getHeight() / 2);
+
+        recBloco.set(initX + bloco.getPosicao().x * (texturaBloco.getWidth() - 4) + 8,
+                initY + bloco.getPosicao().y * (texturaBloco.getHeight() - 32) + 32,
+                texturaBloco.getWidth(),texturaBloco.getHeight());
+
+        spriteBloco.setPosition(initX + bloco.getPosicao().x * spriteBloco.getTexture().getWidth(),
+                initY + bloco.getPosicao().y * (spriteBloco.getTexture().getHeight() - 32));
+
+        controlarPosicao(bloco,recBloco,recJogador);
+    }
+
+    private boolean blocoRemovido = false;
+    private void trocaBlocos() {
+        if (xAtual > xAnterior || xAtual < xAnterior || yAtual > yAnterior || yAtual < yAnterior) {
+            if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO2)) {
+                caminho.get(yAnterior).get(xAnterior).setTipo(BlocoTipo.BLOCO);
+            } else if (caminho.get(yAnterior).get(xAnterior).getTipo().equals(BlocoTipo.BLOCO)) {
+                caminho.get(yAnterior).get(xAnterior).setTipo(BlocoTipo.AGUA);
+                cont_bloco_removido += 1;
+                blocoRemovido = true;
             }
-            removido = true;
-        }else if (yAtual > yAnterior || yAtual < yAnterior) {
-            if (caminho.get(yAnterior).get(xAtual).getTipo().equals(BlocoTipo.BLOCO2)) {
-                caminho.get(yAnterior).get(xAtual).setTipo(BlocoTipo.BLOCO);
-            } else if (caminho.get(yAnterior).get(xAtual).getTipo().equals(BlocoTipo.BLOCO)) {
-                caminho.get(yAnterior).get(xAtual).setTipo(BlocoTipo.AGUA);
-            }
-            removido = true;
         }
+        atualizar = true;
     }
 
+    private int xAtual = 0; private int yAtual = 0;
     private int xAnterior = 0; private int yAnterior = 0;
-    boolean inicio = true; boolean removido;
-    private void controlarPosicao(Bloco bloco) {
+    private boolean inicio = true; private boolean atualizar;
+    private void controlarPosicao(Bloco bloco, Rectangle recBloco, Rectangle recJogador) {
         if (recBloco.contains(recJogador)) {
             if (inicio) {
                 xAnterior = (int) bloco.getPosicao().x;
                 yAnterior = (int) bloco.getPosicao().y;
                 inicio = false;
-            }else if (removido) {
-                xAnterior = (int) bloco.getPosicao().x;
-                yAnterior = (int) bloco.getPosicao().y;
-                removido = false;
+            }else if (atualizar) {
+                xAnterior = xAtual;
+                yAnterior = yAtual;
+                atualizar = false;
             }
-
             xAtual = (int) bloco.getPosicao().x;
             yAtual = (int) bloco.getPosicao().y;
         }
     }
+
 
     public void capturarTeclas() {
         if (classJogador.getDirecao() == Direcao.PARADO) {
@@ -562,12 +417,12 @@ public class TelaJogo extends TelaBase {
         texturaBloco.dispose();
         texturaBloco2.dispose();
         texturaAgua.dispose();
-        fonteBotoes.dispose();
-        fonteTituloAviso.dispose();
+        //fonteBotoes.dispose();
+        //fonteTituloAviso.dispose();
         texturaBotao.dispose();
         texturaTelaAviso.dispose();
         texturaBotaoPressionado.dispose();
-        spriteBloco.getTexture().dispose();
+
         for (int i = 1; i <= 6; i++) {
             texturaSplash.dispose();
         }
