@@ -45,6 +45,7 @@ public class MainJogo extends Game{
 		this.inicioJogo = inicioJogo;
 	}
 
+
 	private void criarNiveis() {
 
 		Nivel n = new Nivel();
