@@ -4,17 +4,17 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
+
 public class MainJogo extends Game{
 
 	private Array<Nivel> niveis = new Array<Nivel>();
 
 	private int nivelAtual = 0;
-	private boolean inicioJogo = false;
-	
+
 	@Override
 	public void create () {
 		criarNiveis();
-		setScreen(new TelaJogo(this));
+		setScreen(new Menu(this));
 	}
 
 	public Array<Nivel> getNiveis() {
@@ -35,14 +35,6 @@ public class MainJogo extends Game{
 
 	public void setNivelAtual(int nivelAtual) {
 		this.nivelAtual = nivelAtual;
-	}
-
-	public boolean isInicioJogo() {
-		return inicioJogo;
-	}
-
-	public void setInicioJogo(boolean inicioJogo) {
-		this.inicioJogo = inicioJogo;
 	}
 
 
