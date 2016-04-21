@@ -82,7 +82,7 @@ public class Jogador {
                     y = sprite.getY();
                     sprite.setPosition(x, y);
                 } else {
-                    direcao = Direcao.PARADO;
+                    setDirecao(Direcao.PARADO);
                 }
                 break;
             case ESQUERDA:
@@ -91,7 +91,7 @@ public class Jogador {
                     y = sprite.getY();
                     sprite.setPosition(x, y);
                 }else {
-                    direcao = Direcao.PARADO;
+                    setDirecao(Direcao.PARADO);
                 }
                 break;
             case CIMA:
@@ -100,7 +100,7 @@ public class Jogador {
                     y = sprite.getY() + velocidade * delta;
                     sprite.setPosition(x, y);
                 }else {
-                    direcao = Direcao.PARADO;
+                    setDirecao(Direcao.PARADO);
                 }
                 break;
             case BAIXO:
@@ -109,7 +109,7 @@ public class Jogador {
                     y = sprite.getY() - velocidade * delta;
                     sprite.setPosition(x, y);
                 }else {
-                    direcao = Direcao.PARADO;
+                    setDirecao(Direcao.PARADO);
                 }
                 break;
         }
@@ -170,7 +170,6 @@ public class Jogador {
     }
 
     public void setDirecao(Direcao direcao) {
-        this.direcao = direcao;
         switch (direcao) {
             case DIREITA:
                 posicaoDestino.x = sprite.getX() + DESLOCAMENTO_X;
@@ -184,7 +183,10 @@ public class Jogador {
             case BAIXO:
                 posicaoDestino.y = sprite.getY() - DESLOCAMENTO_Y;
                 break;
+            case PARADO:
+                break;
         }
+        this.direcao = direcao;
     }
 
     public float getX(){

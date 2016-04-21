@@ -17,10 +17,18 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextArea;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FillViewport;
+
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
+
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 
 /**
@@ -28,6 +36,7 @@ import com.badlogic.gdx.utils.viewport.FillViewport;
  */
 public class TelaJogo extends TelaBase {
 
+    private static String ultimoCodigo = "";
     private OrthographicCamera cameraInformacoes;
     private SpriteBatch pincel;
     private Texture texturaBloco;
@@ -62,14 +71,21 @@ public class TelaJogo extends TelaBase {
     private Texture texturaBotao;
     private Texture texturaBotaoPressionado;
     private ImageTextButton btnVoltar;
+    private ImageTextButton btnCompilar;
+    private ImageTextButton btnExecutar;
+    private ImageTextButton btnCancelar;
     private BitmapFont fonteAnimaNivel;
+    private TextArea caixaTexto;
     private boolean inicioJogo = false;
+    private boolean executouComandos = false;
+    private boolean ganhou = false;
+    private boolean reiniciando = false;
+
+    private Queue<Direcao> direcoes = new ArrayDeque<Direcao>();
 
     public TelaJogo(MainJogo jogo) {
         super(jogo);
     }
-
-
 
     @Override
     public void show() {
@@ -85,6 +101,7 @@ public class TelaJogo extends TelaBase {
         initTexturas();
         initNivel();
 
+        initCaixaTexto();
         initFonteInformacoes();
         initLabelsInformacoes();
         initLabelAnimaNivel();
@@ -98,9 +115,11 @@ public class TelaJogo extends TelaBase {
 
 
         if (inicioJogo) {
-            capturarTeclas();
+            atualizarDirecoes();
+            //capturarTeclas();
             atualizaNivel();
             atualizaBotaoVoltar();
+            consoleGame();
             palcoInformacoes.act();
             palcoNivel.act();
         }
@@ -136,6 +155,19 @@ public class TelaJogo extends TelaBase {
             gameOver = true;
         }
 
+        caixaTexto.act(delta);
+
+    }
+
+    private void atualizarDirecoes() {
+        if (!reiniciando) {
+            if (classJogador.getDirecao() == Direcao.PARADO && !direcoes.isEmpty() && executouComandos) {
+                Direcao dir = direcoes.poll();
+                classJogador.setDirecao(dir);
+            } else if (classJogador.getDirecao() == Direcao.PARADO && direcoes.isEmpty() && executouComandos && !ganhou) {
+                gameOver = true;
+            }
+        }
     }
 
     private void initTexturas() {
@@ -195,6 +227,12 @@ public class TelaJogo extends TelaBase {
         estilo.down = new SpriteDrawable(new Sprite(texturaBotaoPressionado));
 
         btnVoltar = new ImageTextButton("  Voltar  ", estilo);
+
+        btnCompilar = new ImageTextButton("  Compilar  ", estilo);
+
+        btnExecutar = new ImageTextButton("  Executar  ", estilo);
+
+        btnCancelar = new ImageTextButton("  Cancelar  ", estilo);
     }
 
     private int level;
@@ -207,8 +245,17 @@ public class TelaJogo extends TelaBase {
         level = jogo.getNivelAtualIndex() + 1;
         lbLevel.setText("LEVEL " + level);
 
-        btnVoltar.setPosition(cameraInformacoes.viewportWidth / 2 - btnVoltar.getPrefWidth() + 490,
+        btnVoltar.setPosition(cameraInformacoes.viewportWidth / 2 - btnVoltar.getPrefWidth() + 450,
                 cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 200);
+
+        btnCompilar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCompilar.getPrefWidth() + 300,
+                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 200);
+
+        btnExecutar.setPosition(cameraInformacoes.viewportWidth / 2 - btnExecutar.getPrefWidth() + 120,
+                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 140);
+
+        btnCancelar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCancelar.getPrefWidth() + 300,
+                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 140);
     }
 
     private void initFonteInformacoes() {
@@ -239,6 +286,7 @@ public class TelaJogo extends TelaBase {
     }
 
     private void reiniciarJogo() {
+        reiniciando = true;
         jogo.setScreen(new TelaJogo(jogo));
         //Gdx.app.exit();
     }
@@ -253,6 +301,87 @@ public class TelaJogo extends TelaBase {
                 jogo.setScreen(new Menu(jogo));
             }
         });
+    }
+
+    private void initCaixaTexto() {
+        skin = new Skin(Gdx.files.internal("uiskin.json"));
+
+        caixaTexto = new TextArea("", skin);
+        caixaTexto.setSize(600, 350);
+        caixaTexto.setPosition(210, 150);
+        caixaTexto.setText(ultimoCodigo);
+    }
+
+    private Skin skin;
+    private void consoleGame() {
+        palcoInformacoes.addActor(btnCompilar);
+
+        btnCompilar.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                palcoInformacoes.addActor(caixaTexto);
+
+                palcoInformacoes.addActor(btnExecutar);
+                palcoInformacoes.addActor(btnCancelar);
+
+                btnVoltar.setVisible(false);
+                btnCompilar.setVisible(false);
+
+            }
+        });
+
+        btnExecutar.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                btnExecutar.remove();
+                btnCancelar.remove();
+
+                btnVoltar.setVisible(true);
+                btnCompilar.setVisible(true);
+
+                caixaTexto.remove();
+
+                executarComandos();
+
+            }
+        });
+
+        btnCancelar.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                btnExecutar.remove();
+                btnCancelar.remove();
+
+                btnVoltar.setVisible(true);
+                btnCompilar.setVisible(true);
+
+                caixaTexto.remove();
+            }
+        });
+
+    }
+
+    private void executarComandos() {
+
+        try {
+            ComandosJogador comandos = new ComandosJogador();
+
+            String source = caixaTexto.getText();
+            ultimoCodigo = caixaTexto.getText();
+
+            org.mozilla.javascript.Context ctx = org.mozilla.javascript.Context.enter();
+            ctx.setOptimizationLevel(-1); // desabilita a compilação
+            Scriptable scope = ctx.initStandardObjects();
+            Object wrappedOut = ctx.javaToJS(comandos, scope);
+            ScriptableObject.putProperty(scope, "jogador", wrappedOut);
+            Object result = ctx.evaluateString(scope, source, "<cmd>", 1, null);
+            executouComandos = true;
+        }catch (Exception ex){
+            direcoes.clear(); // limpa as direções em caso de erro
+            String erro = ex.getMessage();
+            System.out.println("O erro foi: " + erro);
+        }
+
     }
 
     private void atualizarPosicaoSplashJogador() {
@@ -310,6 +439,7 @@ public class TelaJogo extends TelaBase {
     private void atualizaNivel() {
         if ((caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.FINAL)) &&
                 (cont_bloco_removido == cont_blocos_remover) && (classJogador.getDirecao().equals(Direcao.PARADO))) {
+            ganhou = true;
             int proxNivel = jogo.getNivelAtualIndex() + 1;
             if (proxNivel < jogo.getNiveis().size) {
                 jogo.setNivelAtual(proxNivel);
@@ -532,7 +662,7 @@ public class TelaJogo extends TelaBase {
         texturaAgua.dispose();
         texturaBotao.dispose();
         texturaBotaoPressionado.dispose();
-
+        skin.dispose();
         for (int i = 1; i <= 6; i++) {
             texturaSplash.dispose();
         }
@@ -554,5 +684,24 @@ public class TelaJogo extends TelaBase {
         palcoInformacoes.dispose();
         palcoNivel.dispose();
         pincel.dispose();
+    }
+
+    public class ComandosJogador {
+        public void direita(){
+            direcoes.add(Direcao.DIREITA);
+            System.out.println(Direcao.DIREITA);
+        }
+        public void esquerda(){
+            direcoes.add(Direcao.ESQUERDA);
+            System.out.println(Direcao.ESQUERDA);
+        }
+        public void cima(){
+            direcoes.add(Direcao.CIMA);
+            System.out.println(Direcao.CIMA);
+        }
+        public void baixo(){
+            direcoes.add(Direcao.BAIXO);
+            System.out.println(Direcao.BAIXO);
+        }
     }
 }
