@@ -151,7 +151,7 @@ public class Menu extends TelaBase{
                     btnSim.addListener(new ClickListener() {
                         public void clicked(InputEvent event, float x, float y) {
                             Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
-                            pref.putInteger("MAIOR_LEVEL", 0);
+                            pref.putInteger("MAIOR_LEVEL", -1);
                             pref.flush();
                             jogo.setNivelAtual(0);
                             jogo.setScreen(new TelaJogo(jogo));
@@ -177,7 +177,7 @@ public class Menu extends TelaBase{
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 if (nv) {
-                    jogo.setNivelAtual(maiorLevel);
+                    jogo.setNivelAtual(maiorLevel + 1);
                     jogo.setScreen(new TelaJogo(jogo));
                 }
             }
@@ -197,7 +197,7 @@ public class Menu extends TelaBase{
 
         Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
         maiorLevel = pref.getInteger("MAIOR_LEVEL", 0);
-        if (maiorLevel > 0) {
+        if (maiorLevel >= 0) {
             nv = true;
         }
 

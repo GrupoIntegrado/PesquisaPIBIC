@@ -113,7 +113,6 @@ public class TelaJogo extends TelaBase {
         Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-
         if (inicioJogo) {
             atualizarDirecoes();
             //capturarTeclas();
@@ -122,10 +121,11 @@ public class TelaJogo extends TelaBase {
             consoleGame();
             palcoInformacoes.act();
             palcoNivel.act();
+            caixaTexto.act(delta);
         }
 
-        atualizarBlocos();
         atualizarInformacoes();
+        atualizarBlocos();
 
         reenderizaBlocos();
 
@@ -144,19 +144,19 @@ public class TelaJogo extends TelaBase {
         if (!gameOver && inicioJogo) {
             classJogador.atualizar(delta, pincel);
             palcoInformacoes.draw();
-        }else if (gameOver){
-            reenderSplashJogador(delta);
-            if (estagio == 5) {
-                reiniciarJogo();
-            }
         }
 
         if (caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.AGUA) && inicioJogo) {
             gameOver = true;
+            reenderSplashJogador(delta);
+            if (estagio == 5) {
+                reiniciarJogo();
+            }
+        }else if (!ganhou && gameOver) {
+            reiniciarJogo();
+        }else if (ganhou) {
+            reiniciarJogo();
         }
-
-        caixaTexto.act(delta);
-
     }
 
     private void atualizarDirecoes() {
@@ -282,6 +282,7 @@ public class TelaJogo extends TelaBase {
     private void salvarLevel() {
         Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
         pref.putInteger("MAIOR_LEVEL", jogo.getNivelAtualIndex());
+        pref.putString("ULTIMOCODIGO", ultimoCodigo);
         pref.flush();
     }
 
@@ -319,6 +320,9 @@ public class TelaJogo extends TelaBase {
         btnCompilar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
+                int nivel = pref.getInteger("MAIOR_LEVEL", 0);
+
                 palcoInformacoes.addActor(caixaTexto);
 
                 palcoInformacoes.addActor(btnExecutar);
@@ -327,6 +331,10 @@ public class TelaJogo extends TelaBase {
                 btnVoltar.setVisible(false);
                 btnCompilar.setVisible(false);
 
+                if (jogo.getNivelAtualIndex() == nivel) {
+                    String ultcodigo = pref.getString("ULTIMOCODIGO");
+                    caixaTexto.setText(ultcodigo);
+                }
             }
         });
 
@@ -370,14 +378,17 @@ public class TelaJogo extends TelaBase {
             ultimoCodigo = caixaTexto.getText();
 
             org.mozilla.javascript.Context ctx = org.mozilla.javascript.Context.enter();
-            ctx.setOptimizationLevel(-1); // desabilita a compilação
+            ctx.setOptimizationLevel(-1); // desabilita a compilaï¿½ï¿½o
             Scriptable scope = ctx.initStandardObjects();
             Object wrappedOut = ctx.javaToJS(comandos, scope);
             ScriptableObject.putProperty(scope, "jogador", wrappedOut);
             Object result = ctx.evaluateString(scope, source, "<cmd>", 1, null);
-            executouComandos = true;
+            if (!caixaTexto.getText().isEmpty()) {
+                executouComandos = true;
+            }
+
         }catch (Exception ex){
-            direcoes.clear(); // limpa as direções em caso de erro
+            direcoes.clear(); // limpa as direï¿½ï¿½es em caso de erro
             String erro = ex.getMessage();
             System.out.println("O erro foi: " + erro);
         }
@@ -442,9 +453,8 @@ public class TelaJogo extends TelaBase {
             ganhou = true;
             int proxNivel = jogo.getNivelAtualIndex() + 1;
             if (proxNivel < jogo.getNiveis().size) {
-                jogo.setNivelAtual(proxNivel);
                 salvarLevel();
-                reiniciarJogo();
+                jogo.setNivelAtual(proxNivel);
             }
         }
     }

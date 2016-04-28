@@ -134,7 +134,7 @@ public class Jogador {
                     sprite.setTexture(trocarTexturaBaixo.get(estagio));
                     break;
                 case PARADO:
-                    sprite.setTexture(texturaJogador);
+                    //sprite.setTexture(texturaJogador);
                     break;
             }
         }
