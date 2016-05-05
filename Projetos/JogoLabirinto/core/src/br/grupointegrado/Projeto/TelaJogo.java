@@ -80,6 +80,9 @@ public class TelaJogo extends TelaBase {
     private boolean executouComandos = false;
     private boolean ganhou = false;
     private boolean reiniciando = false;
+    private int contTentativas = 0;
+    private Label lbContTentativas;
+    private int act_tentativas = 0;
 
     private Queue<Direcao> direcoes = new ArrayDeque<Direcao>();
 
@@ -106,6 +109,7 @@ public class TelaJogo extends TelaBase {
         initLabelsInformacoes();
         initLabelAnimaNivel();
         initJogador();
+        carregarJogoSalvo();
     }
 
     @Override
@@ -221,6 +225,9 @@ public class TelaJogo extends TelaBase {
         lbLevel = new Label("Level", lbEstilo);
         palcoInformacoes.addActor(lbLevel);
 
+        lbContTentativas = new Label("Tentativa(s)", lbEstilo);
+        palcoInformacoes.addActor(lbContTentativas);
+
         ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
         estilo.font = fonteBotoes;
         estilo.up = new SpriteDrawable(new Sprite(texturaBotao));
@@ -244,6 +251,10 @@ public class TelaJogo extends TelaBase {
         lbLevel.setPosition(cameraInformacoes.viewportWidth / 6, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
         level = jogo.getNivelAtualIndex() + 1;
         lbLevel.setText("LEVEL " + level);
+
+        lbContTentativas.setPosition(cameraInformacoes.viewportWidth / 2 + 250, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
+        act_tentativas = contTentativas + n_tentativas_salvo;
+        lbContTentativas.setText("TENTATIVA(S): " + act_tentativas);
 
         btnVoltar.setPosition(cameraInformacoes.viewportWidth / 2 - btnVoltar.getPrefWidth() + 450,
                 cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 200);
@@ -280,16 +291,15 @@ public class TelaJogo extends TelaBase {
     }
 
     private void salvarLevel() {
-        Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
-        pref.putInteger("MAIOR_LEVEL", jogo.getNivelAtualIndex());
-        pref.putString("ULTIMOCODIGO", ultimoCodigo);
-        pref.flush();
+        Preferences prefNivel = Gdx.app.getPreferences("NIVEL" + jogo.getNivelAtualIndex());
+        prefNivel.putString("CODIGO_SUCESSO", ultimoCodigo);
+        prefNivel.putInteger("NUM_TENTATIVAS", act_tentativas);
+        prefNivel.flush();
     }
 
     private void reiniciarJogo() {
         reiniciando = true;
         jogo.setScreen(new TelaJogo(jogo));
-        //Gdx.app.exit();
     }
 
     private void atualizaBotaoVoltar() {
@@ -310,7 +320,17 @@ public class TelaJogo extends TelaBase {
         caixaTexto = new TextArea("", skin);
         caixaTexto.setSize(600, 350);
         caixaTexto.setPosition(210, 150);
-        caixaTexto.setText(ultimoCodigo);
+    }
+
+    int n_tentativas_salvo = 0;
+    private void carregarJogoSalvo() {
+        Preferences prefNivel = Gdx.app.getPreferences("NIVEL" + jogo.getNivelAtualIndex());
+
+        String codigo_salvo = prefNivel.getString("CODIGO_SUCESSO");
+        n_tentativas_salvo = prefNivel.getInteger("NUM_TENTATIVAS", 0);
+        if (!codigo_salvo.isEmpty()) {
+            caixaTexto.setText(codigo_salvo);
+        }
     }
 
     private Skin skin;
@@ -320,9 +340,6 @@ public class TelaJogo extends TelaBase {
         btnCompilar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Preferences pref = Gdx.app.getPreferences("JOGOBLOCOS");
-                int nivel = pref.getInteger("MAIOR_LEVEL", 0);
-
                 palcoInformacoes.addActor(caixaTexto);
 
                 palcoInformacoes.addActor(btnExecutar);
@@ -330,11 +347,6 @@ public class TelaJogo extends TelaBase {
 
                 btnVoltar.setVisible(false);
                 btnCompilar.setVisible(false);
-
-                if (jogo.getNivelAtualIndex() == nivel) {
-                    String ultcodigo = pref.getString("ULTIMOCODIGO");
-                    caixaTexto.setText(ultcodigo);
-                }
             }
         });
 
@@ -346,6 +358,8 @@ public class TelaJogo extends TelaBase {
 
                 btnVoltar.setVisible(true);
                 btnCompilar.setVisible(true);
+
+                contTentativas += 1;
 
                 caixaTexto.remove();
 
