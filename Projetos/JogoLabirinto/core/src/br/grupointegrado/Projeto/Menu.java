@@ -118,12 +118,7 @@ public class Menu extends TelaBase{
 
         btnLista.setPosition(cameraMenu.viewportWidth / 1.6f - btnLista.getPrefWidth() / 2, cameraMenu.viewportHeight / 2 + 250 - yl);
 
-
-        Preferences prefNivel = Gdx.app.getPreferences("NIVEL" + cd_nv);
-        String codigo_salvo = prefNivel.getString("CODIGO_SUCESSO");
-        if (codigo_salvo.isEmpty()) {
-            btnLista.remove();
-        }else palcoMenu.addActor(btnLista);
+        palcoMenu.addActor(btnLista);
 
         btnLista.addListener(new ClickListener() {
             @Override
