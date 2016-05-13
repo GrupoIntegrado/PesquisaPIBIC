@@ -80,7 +80,7 @@ public class TelaJogo extends TelaBase {
     private boolean executouComandos = false;
     private boolean ganhou = false;
     private boolean reiniciando = false;
-    private int contTentativas = 0;
+    private static int contTentativas = 0;
     private Label lbContTentativas;
     private int act_tentativas = 0;
 
@@ -110,6 +110,7 @@ public class TelaJogo extends TelaBase {
         initLabelAnimaNivel();
         initJogador();
         carregarJogoSalvo();
+
     }
 
     @Override
@@ -254,6 +255,7 @@ public class TelaJogo extends TelaBase {
 
         lbContTentativas.setPosition(cameraInformacoes.viewportWidth / 2 + 250, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
         act_tentativas = contTentativas + n_tentativas_salvo;
+
         lbContTentativas.setText("TENTATIVA(S): " + act_tentativas);
 
         btnVoltar.setPosition(cameraInformacoes.viewportWidth / 2 - btnVoltar.getPrefWidth() + 450,
@@ -295,6 +297,8 @@ public class TelaJogo extends TelaBase {
         prefNivel.putString("CODIGO_SUCESSO", ultimoCodigo);
         prefNivel.putInteger("NUM_TENTATIVAS", act_tentativas);
         prefNivel.flush();
+        ultimoCodigo = "";
+        contTentativas = 0;
     }
 
     private void reiniciarJogo() {
@@ -309,6 +313,7 @@ public class TelaJogo extends TelaBase {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 inicioJogo = false;
+                jogo.setNivelAtual(0);
                 jogo.setScreen(new Menu(jogo));
             }
         });
@@ -317,15 +322,14 @@ public class TelaJogo extends TelaBase {
     private void initCaixaTexto() {
         skin = new Skin(Gdx.files.internal("uiskin.json"));
 
-        caixaTexto = new TextArea("", skin);
+        caixaTexto = new TextArea(ultimoCodigo, skin);
         caixaTexto.setSize(600, 350);
         caixaTexto.setPosition(210, 150);
     }
 
-    int n_tentativas_salvo = 0;
+    private int n_tentativas_salvo = 0;
     private void carregarJogoSalvo() {
         Preferences prefNivel = Gdx.app.getPreferences("NIVEL" + jogo.getNivelAtualIndex());
-
         String codigo_salvo = prefNivel.getString("CODIGO_SUCESSO");
         n_tentativas_salvo = prefNivel.getInteger("NUM_TENTATIVAS", 0);
         if (!codigo_salvo.isEmpty()) {
@@ -365,6 +369,9 @@ public class TelaJogo extends TelaBase {
 
                 executarComandos();
 
+                if (executouComandos) {
+                    btnCompilar.setVisible(false);
+                }
             }
         });
 
@@ -466,6 +473,7 @@ public class TelaJogo extends TelaBase {
                 (cont_bloco_removido == cont_blocos_remover) && (classJogador.getDirecao().equals(Direcao.PARADO))) {
             ganhou = true;
             int proxNivel = jogo.getNivelAtualIndex() + 1;
+            System.out.println(proxNivel);
             if (proxNivel < jogo.getNiveis().size) {
                 salvarLevel();
                 jogo.setNivelAtual(proxNivel);

@@ -1,7 +1,6 @@
 package br.grupointegrado.Projeto;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -11,12 +10,10 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
-import com.sun.javafx.property.adapter.PropertyDescriptor;
 
 /**
  * Created by Elito Fraga on 27/03/2016.
@@ -27,13 +24,11 @@ public class Menu extends TelaBase{
     private Stage palcoMenu;
     private Label lbListaNivel;
     private BitmapFont fonteBotoes;
-    private ImageTextButton btnJogar;
+    private ImageTextButton btnProximo;
     private ImageTextButton btnLista;
     private ImageTextButton btnSair;
     private Texture texturaBotao;
     private Texture texturaBotaoPressionado;
-    private boolean jogoSalvo = false;
-    private int cd_nv = 0;
     private float yl = 0;
     private ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
 
@@ -52,7 +47,7 @@ public class Menu extends TelaBase{
         estilo.up = new SpriteDrawable(new Sprite(texturaBotao));
         estilo.down = new SpriteDrawable(new Sprite(texturaBotaoPressionado));
 
-        btnJogar = new ImageTextButton(" JOGAR ", estilo);
+        btnProximo = new ImageTextButton(" > ", estilo);
 
         btnSair = new ImageTextButton(" Sair ", estilo);
     }
@@ -70,26 +65,23 @@ public class Menu extends TelaBase{
 
     private void atualizarBotoes() {
 
-            btnJogar.setPosition(cameraMenu.viewportWidth / 2 - btnJogar.getPrefWidth() / 2,
-                cameraMenu.viewportHeight / 2 - btnJogar.getPrefHeight() + 70);
+        btnProximo.setPosition(cameraMenu.viewportWidth - btnProximo.getPrefWidth() / 2 - 200,
+                cameraMenu.viewportHeight / 2 - btnProximo.getPrefHeight() - 200);
 
         btnSair.setPosition(cameraMenu.viewportWidth / 2 - btnSair.getPrefWidth() + 450,
                 cameraMenu.viewportHeight / 2 - btnSair.getPrefHeight() - 200);
 
     }
 
+    private int contListagem = 0;
     private void acaoBotoes() {
 
-        btnJogar.addListener(new ClickListener() {
+        btnProximo.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                btnJogar.remove();
-                palcoMenu.addActor(btnSair);
-
-                while (cd_nv < jogo.getNiveis().size) {
-                    listaNivel(cd_nv);
-                    cd_nv += 1;
-                }
+                if (jogo.getNivelAtualIndex() != jogo.getNiveis().size) {
+                    jogo.setScreen(new Menu(jogo));
+                }else jogo.setNivelAtual(0);
             }
         });
 
@@ -139,9 +131,8 @@ public class Menu extends TelaBase{
         initFonteBotoes();
         initLabelsBotoes();
 
-        jogoSalvo = false;
 
-        palcoMenu.addActor(btnJogar);
+        palcoMenu.addActor(btnProximo);
     }
 
     @Override
@@ -151,6 +142,14 @@ public class Menu extends TelaBase{
 
         atualizarBotoes();
         acaoBotoes();
+
+        palcoMenu.addActor(btnSair);
+
+        while (jogo.getNivelAtualIndex() < jogo.getNiveis().size && contListagem < 3) {
+            listaNivel(jogo.getNivelAtualIndex());
+            contListagem += 1;
+            jogo.setNivelAtual(jogo.getNivelAtualIndex() + 1);
+        }
 
         palcoMenu.act();
         palcoMenu.draw();
