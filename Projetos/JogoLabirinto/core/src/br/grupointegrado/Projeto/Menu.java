@@ -1,6 +1,7 @@
 package br.grupointegrado.Projeto;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -110,7 +111,16 @@ public class Menu extends TelaBase{
 
         btnLista.setPosition(cameraMenu.viewportWidth / 1.6f - btnLista.getPrefWidth() / 2, cameraMenu.viewportHeight / 2 + 250 - yl);
 
-        palcoMenu.addActor(btnLista);
+        if (cd == 0) {
+            palcoMenu.addActor(btnLista);
+        }else if (cd > 0) {
+            int nv_anterior = cd - 1;
+            Preferences prefNivel = Gdx.app.getPreferences("NIVEL" + nv_anterior);
+            String codigo_salvo = prefNivel.getString("CODIGO_SUCESSO");
+            if (!codigo_salvo.isEmpty()) {
+                palcoMenu.addActor(btnLista);
+            }
+        }
 
         btnLista.addListener(new ClickListener() {
             @Override
