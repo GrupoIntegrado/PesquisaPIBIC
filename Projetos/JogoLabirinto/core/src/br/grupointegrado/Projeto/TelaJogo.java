@@ -46,11 +46,13 @@ public class TelaJogo extends TelaBase {
     private Texture texturaSplash;
     private Texture texturaSplashBloco;
     private Label lbAnimaLevel;
+    private Label lbAnimaGameOver;
     private BitmapFont fonte;
     private Label lbContBlocos;
     private Label lbLevel;
     private Stage palcoInformacoes;
     private Stage palcoNivel;
+    private Stage palcoGameOver;
     private float initX = 0;
     private float initY = 0;
     private Sprite splash;
@@ -96,6 +98,7 @@ public class TelaJogo extends TelaBase {
         cameraInformacoes = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         palcoInformacoes = new Stage();
         palcoNivel = new Stage(new FillViewport(cameraInformacoes.viewportWidth, cameraInformacoes.viewportHeight, cameraInformacoes));
+        palcoGameOver = new Stage(new FillViewport(cameraInformacoes.viewportWidth, cameraInformacoes.viewportHeight, cameraInformacoes));
 
         Gdx.input.setInputProcessor(palcoInformacoes);
 
@@ -104,15 +107,12 @@ public class TelaJogo extends TelaBase {
         initTexturas();
         initNivel();
 
+        carregarJogoSalvo();
         initCaixaTexto();
         initFonteInformacoes();
         initLabelsInformacoes();
-        initLabelAnimaNivel();
+        initLabelAnima();
         initJogador();
-        carregarJogoSalvo();
-
-
-
     }
 
     @Override
@@ -131,13 +131,18 @@ public class TelaJogo extends TelaBase {
             caixaTexto.act(delta);
         }
 
+        palcoGameOver.act();
+
         atualizarInformacoes();
         atualizarBlocos();
 
         reenderizaBlocos();
 
-        if (gameOver || !inicioJogo) {
+        if (!inicioJogo) {
             reenderNivel(delta);
+
+        }else if (gameOver) {
+            reenderGameOver(delta);
         }
 
         if (blocoRemovido) {
@@ -159,8 +164,6 @@ public class TelaJogo extends TelaBase {
             if (estagio == 5) {
                 reiniciarJogo();
             }
-        }else if (!ganhou && gameOver) {
-            reiniciarJogo();
         }else if (ganhou) {
             reiniciarJogo();
         }
@@ -264,13 +267,13 @@ public class TelaJogo extends TelaBase {
                 cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 200);
 
         btnCompilar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCompilar.getPrefWidth() + 300,
-                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 200);
+                cameraInformacoes.viewportHeight / 2 - btnCompilar.getPrefHeight() - 200);
 
         btnExecutar.setPosition(cameraInformacoes.viewportWidth / 2 - btnExecutar.getPrefWidth() + 120,
-                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 140);
+                cameraInformacoes.viewportHeight / 2 - btnExecutar.getPrefHeight() - 140);
 
         btnCancelar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCancelar.getPrefWidth() + 300,
-                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 140);
+                cameraInformacoes.viewportHeight / 2 - btnCancelar.getPrefHeight() - 140);
     }
 
     private void initFonteInformacoes() {
@@ -315,6 +318,7 @@ public class TelaJogo extends TelaBase {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 inicioJogo = false;
+                carregou = false;
                 jogo.setNivelAtual(0);
                 jogo.setScreen(new Menu(jogo));
             }
@@ -330,12 +334,13 @@ public class TelaJogo extends TelaBase {
     }
 
     private int n_tentativas_salvo = 0;
+    private static boolean carregou = false;
     private void carregarJogoSalvo() {
-        Preferences prefNivel = Gdx.app.getPreferences("NIVEL" + jogo.getNivelAtualIndex());
-        String codigo_salvo = prefNivel.getString("CODIGO_SUCESSO");
-        n_tentativas_salvo = prefNivel.getInteger("NUM_TENTATIVAS", 0);
-        if (!codigo_salvo.isEmpty()) {
-            caixaTexto.setText(codigo_salvo);
+        if (!carregou) {
+            Preferences prefNivel = Gdx.app.getPreferences("NIVEL" + jogo.getNivelAtualIndex());
+            ultimoCodigo = prefNivel.getString("CODIGO_SUCESSO");
+            n_tentativas_salvo = prefNivel.getInteger("NUM_TENTATIVAS", 0);
+            carregou = true;
         }
     }
 
@@ -589,13 +594,16 @@ public class TelaJogo extends TelaBase {
     }
 
 
-    private void initLabelAnimaNivel() {
+    private void initLabelAnima() {
         Label.LabelStyle lbEstilo = new Label.LabelStyle();
         lbEstilo.font = fonteAnimaNivel;
         lbEstilo.fontColor = Color.WHITE;
 
         lbAnimaLevel = new Label("Level", lbEstilo);
         palcoNivel.addActor(lbAnimaLevel);
+
+        lbAnimaGameOver = new Label("Game Over", lbEstilo);
+        palcoGameOver.addActor(lbAnimaGameOver);
     }
 
 
@@ -608,6 +616,17 @@ public class TelaJogo extends TelaBase {
             lbAnimaLevel.setText("LEVEL " + level);
             palcoNivel.draw();
         }else inicioJogo = true;
+    }
+
+
+    private float yg = 100;
+    private void reenderGameOver(float delta) {
+        if (yg <= cameraInformacoes.viewportHeight / 1.8f) {
+            yg += velocidadeNivel * delta;
+            lbAnimaGameOver.setPosition(cameraInformacoes.viewportWidth / 2 - lbAnimaGameOver.getPrefWidth() / 2, yg);
+            lbAnimaGameOver.setText("GAME OVER");
+            palcoGameOver.draw();
+        }else reiniciarJogo();
     }
 
 
@@ -717,6 +736,7 @@ public class TelaJogo extends TelaBase {
         }
         palcoInformacoes.dispose();
         palcoNivel.dispose();
+        palcoGameOver.dispose();
         pincel.dispose();
     }
 
