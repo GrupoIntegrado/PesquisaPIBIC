@@ -378,6 +378,7 @@ public class TelaJogo extends TelaBase {
 
                 if (executouComandos) {
                     btnCompilar.setVisible(false);
+                    btnVoltar.setVisible(false);
                 }
             }
         });

@@ -26,10 +26,14 @@ public class Menu extends TelaBase{
     private Label lbListaNivel;
     private BitmapFont fonteBotoes;
     private ImageTextButton btnProximo;
+    private ImageTextButton btnAnterior;
     private ImageTextButton btnLista;
+    private ImageTextButton btnJogar;
+    private ImageTextButton btnCreditos;
     private ImageTextButton btnSair;
     private Texture texturaBotao;
     private Texture texturaBotaoPressionado;
+    private static boolean jogar = false;
     private float yl = 0;
     private ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
 
@@ -51,6 +55,12 @@ public class Menu extends TelaBase{
         btnProximo = new ImageTextButton(" > ", estilo);
 
         btnSair = new ImageTextButton(" Sair ", estilo);
+
+        btnAnterior = new ImageTextButton(" < ", estilo);
+
+        btnJogar = new ImageTextButton(" Jogar ", estilo);
+
+        btnCreditos = new ImageTextButton(" Créditos ", estilo);
     }
 
     private void initFonteBotoes() {
@@ -66,8 +76,17 @@ public class Menu extends TelaBase{
 
     private void atualizarBotoes() {
 
+        btnJogar.setPosition(cameraMenu.viewportWidth / 2 - btnJogar.getPrefWidth() / 2,
+                 cameraMenu.viewportHeight / 2 - btnJogar.getPrefWidth() + 200);
+
+        btnCreditos.setPosition(cameraMenu.viewportWidth / 2 - btnCreditos.getPrefWidth() / 2,
+                cameraMenu.viewportHeight / 2 - btnCreditos.getPrefWidth() + 190);
+
         btnProximo.setPosition(cameraMenu.viewportWidth - btnProximo.getPrefWidth() / 2 - 200,
                 cameraMenu.viewportHeight / 2 - btnProximo.getPrefHeight() - 200);
+
+        btnAnterior.setPosition(cameraMenu.viewportWidth - btnAnterior.getPrefWidth() / 2 - 250,
+                cameraMenu.viewportHeight / 2 - btnAnterior.getPrefHeight() - 200);
 
         btnSair.setPosition(cameraMenu.viewportWidth / 2 - btnSair.getPrefWidth() + 450,
                 cameraMenu.viewportHeight / 2 - btnSair.getPrefHeight() - 200);
@@ -75,14 +94,56 @@ public class Menu extends TelaBase{
     }
 
     private int contListagem = 0;
+    private static int proximo = 0;
+    private static int anterior = 0;
     private void acaoBotoes() {
+        btnJogar.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                btnJogar.remove();
+                btnCreditos.remove();
+                jogar = true;
+            }
+        });
+
+        btnCreditos.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                btnJogar.setVisible(false);
+                btnCreditos.setVisible(false);
+            }
+        });
 
         btnProximo.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (jogo.getNivelAtualIndex() != jogo.getNiveis().size) {
+                if (proximo < jogo.getNiveis().size - 1) {
+                    proximo += 3;
+                    jogo.setNivelAtual(proximo);
                     jogo.setScreen(new Menu(jogo));
-                }else jogo.setNivelAtual(0);
+                }else {
+                    proximo = 0;
+                    jogo.setNivelAtual(proximo);
+                    jogo.setScreen(new Menu(jogo));
+                }
+            }
+        });
+
+        btnAnterior.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                anterior = proximo;
+                if (anterior > 0) {
+                    anterior += -3;
+                    proximo += - 3;
+                    jogo.setNivelAtual(anterior);
+                    jogo.setScreen(new Menu(jogo));
+                }else if (anterior == 0){
+                    anterior = jogo.getNiveis().size - 1;
+                    proximo = anterior;
+                    jogo.setNivelAtual(anterior);
+                    jogo.setScreen(new Menu(jogo));
+                }
             }
         });
 
@@ -107,7 +168,7 @@ public class Menu extends TelaBase{
 
         lbListaNivel.setPosition(cameraMenu.viewportWidth / 3 - lbListaNivel.getPrefWidth() / 2, cameraMenu.viewportHeight / 2 + 250 - yl);
 
-        btnLista = new ImageTextButton(" JOGAR  ", estilo);
+        btnLista = new ImageTextButton(" Selecionar  ", estilo);
 
         btnLista.setPosition(cameraMenu.viewportWidth / 1.6f - btnLista.getPrefWidth() / 2, cameraMenu.viewportHeight / 2 + 250 - yl);
 
@@ -141,8 +202,10 @@ public class Menu extends TelaBase{
         initFonteBotoes();
         initLabelsBotoes();
 
-
-        palcoMenu.addActor(btnProximo);
+        if (!jogar) {
+            palcoMenu.addActor(btnJogar);
+            palcoMenu.addActor(btnCreditos);
+        }
     }
 
     @Override
@@ -153,12 +216,15 @@ public class Menu extends TelaBase{
         atualizarBotoes();
         acaoBotoes();
 
-        palcoMenu.addActor(btnSair);
-
-        while (jogo.getNivelAtualIndex() < jogo.getNiveis().size && contListagem < 3) {
-            listaNivel(jogo.getNivelAtualIndex());
-            contListagem += 1;
-            jogo.setNivelAtual(jogo.getNivelAtualIndex() + 1);
+        if (jogar) {
+            while (jogo.getNivelAtualIndex() < jogo.getNiveis().size && contListagem <= 2) {
+                listaNivel(jogo.getNivelAtualIndex());
+                jogo.setNivelAtual(jogo.getNivelAtualIndex() + 1);
+                contListagem += 1;
+            }
+            palcoMenu.addActor(btnProximo);
+            palcoMenu.addActor(btnAnterior);
+            palcoMenu.addActor(btnSair);
         }
 
         palcoMenu.act();
