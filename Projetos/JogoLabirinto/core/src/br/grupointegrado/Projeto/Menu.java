@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -24,7 +25,11 @@ public class Menu extends TelaBase{
     private OrthographicCamera cameraMenu;
     private Stage palcoMenu;
     private Label lbListaNivel;
+    private Label lbapoio;
+    private Label lbrealizacao;
     private BitmapFont fonteBotoes;
+    private BitmapFont fonte;
+    private BitmapFont fontelogo;
     private ImageTextButton btnProximo;
     private ImageTextButton btnAnterior;
     private ImageTextButton btnLista;
@@ -33,6 +38,11 @@ public class Menu extends TelaBase{
     private ImageTextButton btnSair;
     private Texture texturaBotao;
     private Texture texturaBotaoPressionado;
+    private Texture texturaLogoIntegrado;
+    private Texture texturaLogoCnpq;
+    private SpriteBatch pincel;
+    private Sprite spriteintegrado;
+    private Sprite spritecnpq;
     private static boolean jogar = false;
     private float yl = 0;
     private ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
@@ -45,6 +55,27 @@ public class Menu extends TelaBase{
     private void initTexturas () {
         texturaBotao = new Texture("Texturas/button.png");
         texturaBotaoPressionado = new Texture("Texturas/button-down.png");
+        texturaLogoIntegrado = new Texture("Texturas/logointegrado.png");
+        texturaLogoCnpq = new Texture("Texturas/logocnpq.png");
+    }
+
+    private void initLogos() {
+        pincel = new SpriteBatch();
+
+        spriteintegrado = new Sprite(texturaLogoIntegrado);
+        spriteintegrado.setSize(300,226);
+        spriteintegrado.setPosition(80, 30);
+
+        spritecnpq = new Sprite(texturaLogoCnpq);
+        spritecnpq.setSize(440, 132);
+        spritecnpq.setPosition(530, 60);
+    }
+
+    private void atualizaLogos() {
+        pincel.begin();
+        spriteintegrado.draw(pincel);
+        spritecnpq.draw(pincel);
+        pincel.end();
     }
 
     private void initLabelsBotoes() {
@@ -71,6 +102,12 @@ public class Menu extends TelaBase{
         param.size = 32;
         param.color = Color.WHITE;
         fonteBotoes = generator.generateFont(param);
+
+        param.color = Color.BLUE;
+        fonte = generator.generateFont(param);
+
+        param.size = 18;
+        fontelogo = generator.generateFont(param);
 
     }
 
@@ -156,9 +193,6 @@ public class Menu extends TelaBase{
     }
 
     public void listaNivel(final int cd) {
-        Label.LabelStyle lbEstilo = new Label.LabelStyle();
-        lbEstilo.font = fonteBotoes;
-        lbEstilo.fontColor = Color.WHITE;
 
         int nv_text = cd + 1;
         lbListaNivel = new Label("NIVEL " + nv_text, lbEstilo);
@@ -192,6 +226,31 @@ public class Menu extends TelaBase{
         });
     }
 
+    private Label.LabelStyle lbEstilo = new Label.LabelStyle();
+    private void initLabel() {
+        lbEstilo.font = fonte;
+        lbEstilo.fontColor = Color.WHITE;
+
+    }
+
+    private void initLabelLogos() {
+        Label.LabelStyle lblogo = new Label.LabelStyle();
+
+        lblogo.font = fontelogo;
+        lblogo.fontColor = Color.BLUE;
+
+        lbapoio = new Label("Apoio:", lblogo);
+        palcoMenu.addActor(lbapoio);
+
+        lbrealizacao = new Label("Realização:", lblogo);
+        palcoMenu.addActor(lbrealizacao);
+    }
+
+    private void atualizaLabelLogos(){
+        lbrealizacao.setPosition(40 + spriteintegrado.getWidth() / 2, 40 + spriteintegrado.getHeight());
+        lbapoio.setPosition(530 + spritecnpq.getWidth() / 2, 40 + spriteintegrado.getHeight());
+    }
+
     @Override
     public void show() {
         cameraMenu = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -201,6 +260,9 @@ public class Menu extends TelaBase{
         initTexturas();
         initFonteBotoes();
         initLabelsBotoes();
+        initLabel();
+        initLogos();
+        initLabelLogos();
 
         if (!jogar) {
             palcoMenu.addActor(btnJogar);
@@ -210,11 +272,18 @@ public class Menu extends TelaBase{
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
+        Gdx.gl.glClearColor(1f, 1f, 1f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         atualizarBotoes();
         acaoBotoes();
+        atualizaLabelLogos();
+        if (!btnCreditos.isChecked() && !jogar) {
+            atualizaLogos();
+        }else {
+            lbrealizacao.remove();
+            lbapoio.remove();
+        }
 
         if (jogar) {
             while (jogo.getNivelAtualIndex() < jogo.getNiveis().size && contListagem <= 2) {
@@ -252,5 +321,8 @@ public class Menu extends TelaBase{
         texturaBotao.dispose();
         texturaBotaoPressionado.dispose();
         palcoMenu.dispose();
+        pincel.dispose();
+        texturaLogoIntegrado.dispose();
+        texturaLogoCnpq.dispose();
     }
 }

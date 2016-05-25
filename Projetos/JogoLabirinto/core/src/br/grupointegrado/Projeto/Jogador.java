@@ -1,5 +1,7 @@
 package br.grupointegrado.Projeto;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -27,12 +29,15 @@ public class Jogador {
     private Array<Texture> trocarTexturaCima = new Array<Texture>();
     private Array<Texture> trocarTexturaBaixo = new Array<Texture>();
 
+    private Sound somMovJogador;
+
     public Jogador(float posicaoX, float posicaoY, float disX, float disY){
         initJogador(posicaoX, posicaoY, disX, disY);
     }
 
     public void initJogador(float posicaoX, float posicaoY, float disX, float disY) {
         texturas();
+        som();
         sprite = new Sprite(texturaJogador);
         sprite.setOrigin(0, 0);
         posicaoX += - sprite.getWidth() / 2;
@@ -62,12 +67,18 @@ public class Jogador {
         }
     }
 
+    public void som() {
+        somMovJogador = Gdx.audio.newSound(Gdx.files.internal("Sound/movpersonagem.mp3"));
+    }
+
     public void atualizarEstagioJogador(float delta) {
         if (intervalo_frames >= tempo_intervalo) {
+            somMovJogador.play();
             intervalo_frames = 0;
             estagio ++;
-            if (estagio > 3)
+            if (estagio > 3) {
                 estagio = 0;
+            }
         } else {
             intervalo_frames = intervalo_frames + delta;
         }
@@ -203,5 +214,9 @@ public class Jogador {
 
     public float getHeight(){
         return sprite.getHeight();
+    }
+
+    public Sound getSomMovJogador() {
+        return somMovJogador;
     }
 }

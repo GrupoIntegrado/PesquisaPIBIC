@@ -3,6 +3,7 @@ package br.grupointegrado.Projeto;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -59,7 +60,7 @@ public class TelaJogo extends TelaBase {
     private Sprite splashBloco;
     private float intervalo_frames = 0;
     private final float tempo_intervaloBloco = 1 / 8f;
-    private final float tempo_intervalo = 1 / 6f;
+    private final float tempo_intervalo = 1 / 3f;
     private float intervalo_framesBloco = 0f;
     private int estagio = 0;
     private int estagioBloco = 0;
@@ -86,6 +87,11 @@ public class TelaJogo extends TelaBase {
     private Label lbContTentativas;
     private int act_tentativas = 0;
 
+    private Sound somSplashBloco;
+    private Sound somSplashJogador;
+    private Sound somGameOver;
+    private Sound somLevel;
+
     private Queue<Direcao> direcoes = new ArrayDeque<Direcao>();
 
     public TelaJogo(MainJogo jogo) {
@@ -105,6 +111,7 @@ public class TelaJogo extends TelaBase {
         pincel = new SpriteBatch();
 
         initTexturas();
+        initSom();
         initNivel();
 
         carregarJogoSalvo();
@@ -138,13 +145,6 @@ public class TelaJogo extends TelaBase {
 
         reenderizaBlocos();
 
-        if (!inicioJogo) {
-            reenderNivel(delta);
-
-        }else if (gameOver) {
-            reenderGameOver(delta);
-        }
-
         if (blocoRemovido) {
             reenderizarSplashBloco(delta);
             if (estagioBloco == 3) {
@@ -153,6 +153,7 @@ public class TelaJogo extends TelaBase {
             }
         }
 
+
         if (!gameOver && inicioJogo) {
             classJogador.atualizar(delta, pincel);
             palcoInformacoes.draw();
@@ -160,14 +161,25 @@ public class TelaJogo extends TelaBase {
 
         if (caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.AGUA) && inicioJogo) {
             gameOver = true;
-            reenderSplashJogador(delta);
-            if (estagio == 5) {
-                reiniciarJogo();
+
+            if (estagio < 5) {
+                reenderSplashJogador(delta);
             }
+
         }else if (ganhou) {
             reiniciarJogo();
         }
+
+        if (!inicioJogo) {
+            reenderNivel(delta);
+
+        }else if (gameOver) {
+            reenderGameOver(delta);
+        }
+
     }
+
+    int teste = 0;
 
     private void atualizarDirecoes() {
         if (!reiniciando) {
@@ -202,6 +214,12 @@ public class TelaJogo extends TelaBase {
         splash = new Sprite(trocarSplash.get(0));
         splashBloco = new Sprite(trocarSplashBloco.get(0));
 
+    }
+
+    private void initSom() {
+        somSplashBloco = Gdx.audio.newSound(Gdx.files.internal("Sound/splashbloco.wav"));
+        somSplashJogador = Gdx.audio.newSound(Gdx.files.internal("Sound/splashpersonagem.mp3"));
+        somGameOver = Gdx.audio.newSound(Gdx.files.internal("Sound/gameover.wav"));
     }
 
     private void initJogador() {
@@ -450,15 +468,15 @@ public class TelaJogo extends TelaBase {
                 splash.setPosition(posQuedaX, posQuedaY);
                 break;
         }
-
     }
 
     private void atualizarEstagioSplash(float delta) {
         if (intervalo_frames >= tempo_intervalo) {
             intervalo_frames = 0;
-            estagio ++;
-            if (estagio > 5)
-                estagio = 0;
+            if (estagio == 0) {
+                somSplashJogador.play();
+            }
+            estagio++;
         } else {
             intervalo_frames = intervalo_frames + delta;
         }
@@ -570,6 +588,7 @@ public class TelaJogo extends TelaBase {
                 cont_bloco_removido += 1;
                 blocoRemovido = true;
                 atualizarPosicaoSplashBloco();
+                somSplashBloco.play();
             }
         }
         atualizar = true;
@@ -609,7 +628,7 @@ public class TelaJogo extends TelaBase {
 
 
     private float y = 100;
-    private float velocidadeNivel = 200;
+    private float velocidadeNivel = 150;
     private void reenderNivel(float delta) {
         if (y <= cameraInformacoes.viewportHeight / 1.8f) {
             y += velocidadeNivel * delta;
@@ -621,13 +640,19 @@ public class TelaJogo extends TelaBase {
 
 
     private float yg = 100;
+    private int velocidadeGameOver = 75;
     private void reenderGameOver(float delta) {
+        if (yg == 100) {
+            somGameOver.play();
+        }
+
         if (yg <= cameraInformacoes.viewportHeight / 1.8f) {
-            yg += velocidadeNivel * delta;
+            yg += velocidadeGameOver  * delta;
             lbAnimaGameOver.setPosition(cameraInformacoes.viewportWidth / 2 - lbAnimaGameOver.getPrefWidth() / 2, yg);
             lbAnimaGameOver.setText("GAME OVER");
             palcoGameOver.draw();
         }else reiniciarJogo();
+
     }
 
 
@@ -717,6 +742,10 @@ public class TelaJogo extends TelaBase {
         texturaBotao.dispose();
         texturaBotaoPressionado.dispose();
         skin.dispose();
+        somGameOver.dispose();
+        somSplashJogador.dispose();
+        somSplashBloco.dispose();
+        classJogador.getSomMovJogador().dispose();
         for (int i = 1; i <= 6; i++) {
             texturaSplash.dispose();
         }
