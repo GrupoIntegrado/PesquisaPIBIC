@@ -60,7 +60,7 @@ public class TelaJogo extends TelaBase {
     private Sprite splashBloco;
     private float intervalo_frames = 0;
     private final float tempo_intervaloBloco = 1 / 8f;
-    private final float tempo_intervalo = 1 / 3f;
+    private final float tempo_intervalo = 1 / 8f;
     private float intervalo_framesBloco = 0f;
     private int estagio = 0;
     private int estagioBloco = 0;
@@ -87,10 +87,10 @@ public class TelaJogo extends TelaBase {
     private Label lbContTentativas;
     private int act_tentativas = 0;
 
-    private Sound somSplashBloco;
-    private Sound somSplashJogador;
+    private Sound somSplash;
     private Sound somGameOver;
     private Sound somLevel;
+    private Sound clickBotao;
 
     private Queue<Direcao> direcoes = new ArrayDeque<Direcao>();
 
@@ -111,8 +111,8 @@ public class TelaJogo extends TelaBase {
         pincel = new SpriteBatch();
 
         initTexturas();
-        initSom();
         initNivel();
+        initSom();
 
         carregarJogoSalvo();
         initCaixaTexto();
@@ -179,7 +179,6 @@ public class TelaJogo extends TelaBase {
 
     }
 
-    int teste = 0;
 
     private void atualizarDirecoes() {
         if (!reiniciando) {
@@ -217,10 +216,11 @@ public class TelaJogo extends TelaBase {
     }
 
     private void initSom() {
-        somSplashBloco = Gdx.audio.newSound(Gdx.files.internal("Sound/splashbloco.wav"));
-        somSplashJogador = Gdx.audio.newSound(Gdx.files.internal("Sound/splashpersonagem.mp3"));
+        somSplash= Gdx.audio.newSound(Gdx.files.internal("Sound/splashbloco.wav"));
         somGameOver = Gdx.audio.newSound(Gdx.files.internal("Sound/gameover.wav"));
+        clickBotao = Gdx.audio.newSound(Gdx.files.internal("Sound/clickbotao.wav"));
     }
+
 
     private void initJogador() {
         float disAndarX = texturaBloco.getWidth();
@@ -234,7 +234,7 @@ public class TelaJogo extends TelaBase {
 
     private void initNivel() {
         for (BlocoTipo[] linha : jogo.getNivelAtual().getBlocos()) {
-            criarLabirinto(linha[0], linha[1], linha[2], linha[3], linha[4], linha[5], linha[6], linha[7], linha[8], linha[9], linha[10], linha[11]);
+            criarLabirinto(linha[0], linha[1], linha[2], linha[3], linha[4], linha[5], linha[6], linha[7], linha[8], linha[9], linha[10], linha[11], linha[12]);
         }
     }
 
@@ -281,11 +281,11 @@ public class TelaJogo extends TelaBase {
 
         lbContTentativas.setText("TENTATIVA(S): " + act_tentativas);
 
-        btnVoltar.setPosition(cameraInformacoes.viewportWidth / 2 - btnVoltar.getPrefWidth() + 450,
-                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 200);
+        btnVoltar.setPosition(cameraInformacoes.viewportWidth / 2 - btnVoltar.getPrefWidth() + 470,
+                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 250);
 
-        btnCompilar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCompilar.getPrefWidth() + 300,
-                cameraInformacoes.viewportHeight / 2 - btnCompilar.getPrefHeight() - 200);
+        btnCompilar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCompilar.getPrefWidth() + 330,
+                cameraInformacoes.viewportHeight / 2 - btnCompilar.getPrefHeight() - 250);
 
         btnExecutar.setPosition(cameraInformacoes.viewportWidth / 2 - btnExecutar.getPrefWidth() + 120,
                 cameraInformacoes.viewportHeight / 2 - btnExecutar.getPrefHeight() - 140);
@@ -335,6 +335,7 @@ public class TelaJogo extends TelaBase {
         btnVoltar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 inicioJogo = false;
                 carregou = false;
                 jogo.setNivelAtual(0);
@@ -369,6 +370,7 @@ public class TelaJogo extends TelaBase {
         btnCompilar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 palcoInformacoes.addActor(caixaTexto);
 
                 palcoInformacoes.addActor(btnExecutar);
@@ -382,6 +384,7 @@ public class TelaJogo extends TelaBase {
         btnExecutar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 btnExecutar.remove();
                 btnCancelar.remove();
 
@@ -404,6 +407,7 @@ public class TelaJogo extends TelaBase {
         btnCancelar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 btnExecutar.remove();
                 btnCancelar.remove();
 
@@ -472,10 +476,10 @@ public class TelaJogo extends TelaBase {
 
     private void atualizarEstagioSplash(float delta) {
         if (intervalo_frames >= tempo_intervalo) {
-            intervalo_frames = 0;
             if (estagio == 0) {
-                somSplashJogador.play();
+                somSplash.play();
             }
+            intervalo_frames = 0;
             estagio++;
         } else {
             intervalo_frames = intervalo_frames + delta;
@@ -587,8 +591,8 @@ public class TelaJogo extends TelaBase {
                 caminho.get(yAnterior).get(xAnterior).setTipo(BlocoTipo.AGUA);
                 cont_bloco_removido += 1;
                 blocoRemovido = true;
+                somSplash.play();
                 atualizarPosicaoSplashBloco();
-                somSplashBloco.play();
             }
         }
         atualizar = true;
@@ -742,10 +746,7 @@ public class TelaJogo extends TelaBase {
         texturaBotao.dispose();
         texturaBotaoPressionado.dispose();
         skin.dispose();
-        somGameOver.dispose();
-        somSplashJogador.dispose();
-        somSplashBloco.dispose();
-        classJogador.getSomMovJogador().dispose();
+        clickBotao.dispose();
         for (int i = 1; i <= 6; i++) {
             texturaSplash.dispose();
         }
@@ -764,6 +765,9 @@ public class TelaJogo extends TelaBase {
         for (Texture texturasMovimento : classJogador.getTrocarTexturaBaixo()) {
             texturasMovimento.dispose();
         }
+        somGameOver.dispose();
+        somSplash.dispose();
+        classJogador.getSomMovJogador().dispose();
         palcoInformacoes.dispose();
         palcoNivel.dispose();
         palcoGameOver.dispose();

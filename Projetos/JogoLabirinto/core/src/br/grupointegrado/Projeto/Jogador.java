@@ -67,6 +67,7 @@ public class Jogador {
         }
     }
 
+
     public void som() {
         somMovJogador = Gdx.audio.newSound(Gdx.files.internal("Sound/movpersonagem.mp3"));
     }

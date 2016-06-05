@@ -2,6 +2,8 @@ package br.grupointegrado.Projeto;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -46,6 +48,8 @@ public class Menu extends TelaBase{
     private static boolean jogar = false;
     private float yl = 0;
     private ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
+    private Sound clickBotao;
+    private Music somMenu;
 
 
     public Menu(MainJogo jogo) {
@@ -63,12 +67,18 @@ public class Menu extends TelaBase{
         pincel = new SpriteBatch();
 
         spriteintegrado = new Sprite(texturaLogoIntegrado);
-        spriteintegrado.setSize(300,226);
-        spriteintegrado.setPosition(80, 30);
+        spriteintegrado.setSize(200,66);
+        spriteintegrado.setPosition(570, 30);
 
         spritecnpq = new Sprite(texturaLogoCnpq);
-        spritecnpq.setSize(440, 132);
-        spritecnpq.setPosition(530, 60);
+        spritecnpq.setSize(220, 66);
+        spritecnpq.setPosition(820, 30);
+    }
+
+    private void initSom() {
+        clickBotao = Gdx.audio.newSound(Gdx.files.internal("Sound/clickbotao.wav"));
+        somMenu = Gdx.audio.newMusic(Gdx.files.internal("Sound/sommenu.mp3"));
+        somMenu.setLooping(true);
     }
 
     private void atualizaLogos() {
@@ -131,12 +141,14 @@ public class Menu extends TelaBase{
     }
 
     private int contListagem = 0;
-    private static int proximo = 0;
-    private static int anterior = 0;
+    private static int indice = 0;
+    private static int indece_final = 0;
+    private int aux = jogo.getNiveis().size;
     private void acaoBotoes() {
         btnJogar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 btnJogar.remove();
                 btnCreditos.remove();
                 jogar = true;
@@ -146,6 +158,7 @@ public class Menu extends TelaBase{
         btnCreditos.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 btnJogar.setVisible(false);
                 btnCreditos.setVisible(false);
             }
@@ -154,39 +167,53 @@ public class Menu extends TelaBase{
         btnProximo.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (proximo < jogo.getNiveis().size - 1) {
-                    proximo += 3;
-                    jogo.setNivelAtual(proximo);
-                    jogo.setScreen(new Menu(jogo));
-                }else {
-                    proximo = 0;
-                    jogo.setNivelAtual(proximo);
-                    jogo.setScreen(new Menu(jogo));
+                clickBotao.play();
+                if (contListagem < jogo.getNiveis().size) {
+                    while (aux >= 9) {
+                        aux += - 9;
+                    }
+                    indece_final = jogo.getNiveis().size - aux;
+                    if (indice < jogo.getNiveis().size && contListagem >= 9) {
+                        indice += 9;
+                        jogo.setNivelAtual(indice);
+                        jogo.setScreen(new Menu(jogo));
+                    } else if (indice == indece_final) {
+                        indice = 0;
+                        jogo.setNivelAtual(indice);
+                        jogo.setScreen(new Menu(jogo));
+                    }
                 }
+
             }
         });
 
         btnAnterior.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                anterior = proximo;
-                if (anterior > 0) {
-                    anterior += -3;
-                    proximo += - 3;
-                    jogo.setNivelAtual(anterior);
-                    jogo.setScreen(new Menu(jogo));
-                }else if (anterior == 0){
-                    anterior = jogo.getNiveis().size - 1;
-                    proximo = anterior;
-                    jogo.setNivelAtual(anterior);
-                    jogo.setScreen(new Menu(jogo));
+                clickBotao.play();
+                if (contListagem < jogo.getNiveis().size) {
+                    while (aux >= 9) {
+                        aux += - 9;
+                    }
+
+                    if (indice == 0) {
+                        indice = jogo.getNiveis().size - aux;
+                        jogo.setNivelAtual(indice);
+                        jogo.setScreen(new Menu(jogo));
+                    } else if (indice > 0) {
+                        indice += -9;
+                        jogo.setNivelAtual(indice);
+                        jogo.setScreen(new Menu(jogo));
+                    }
                 }
+
             }
         });
 
         btnSair.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 Gdx.app.exit();
             }
         });
@@ -195,16 +222,12 @@ public class Menu extends TelaBase{
     public void listaNivel(final int cd) {
 
         int nv_text = cd + 1;
-        lbListaNivel = new Label("NIVEL " + nv_text, lbEstilo);
-        palcoMenu.addActor(lbListaNivel);
 
         yl += 50;
 
-        lbListaNivel.setPosition(cameraMenu.viewportWidth / 3 - lbListaNivel.getPrefWidth() / 2, cameraMenu.viewportHeight / 2 + 250 - yl);
+        btnLista = new ImageTextButton(" NIVEL " + nv_text + " ", estilo);
 
-        btnLista = new ImageTextButton(" Selecionar  ", estilo);
-
-        btnLista.setPosition(cameraMenu.viewportWidth / 1.6f - btnLista.getPrefWidth() / 2, cameraMenu.viewportHeight / 2 + 250 - yl);
+        btnLista.setPosition(cameraMenu.viewportWidth / 2 - btnLista.getPrefWidth() / 2, cameraMenu.viewportHeight / 2 + 250 - yl);
 
         if (cd == 0) {
             palcoMenu.addActor(btnLista);
@@ -220,6 +243,7 @@ public class Menu extends TelaBase{
         btnLista.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                clickBotao.play();
                 jogo.setNivelAtual(cd);
                 jogo.setScreen(new TelaJogo(jogo));
             }
@@ -247,8 +271,8 @@ public class Menu extends TelaBase{
     }
 
     private void atualizaLabelLogos(){
-        lbrealizacao.setPosition(40 + spriteintegrado.getWidth() / 2, 40 + spriteintegrado.getHeight());
-        lbapoio.setPosition(530 + spritecnpq.getWidth() / 2, 40 + spriteintegrado.getHeight());
+        lbrealizacao.setPosition(spriteintegrado.getX(), spriteintegrado.getY() + spriteintegrado.getHeight() + 5);
+        lbapoio.setPosition(spritecnpq.getX(), spritecnpq.getY() + spritecnpq.getHeight() + 10);
     }
 
     @Override
@@ -263,11 +287,13 @@ public class Menu extends TelaBase{
         initLabel();
         initLogos();
         initLabelLogos();
+        initSom();
 
         if (!jogar) {
             palcoMenu.addActor(btnJogar);
             palcoMenu.addActor(btnCreditos);
         }
+
     }
 
     @Override
@@ -278,6 +304,7 @@ public class Menu extends TelaBase{
         atualizarBotoes();
         acaoBotoes();
         atualizaLabelLogos();
+
         if (!btnCreditos.isChecked() && !jogar) {
             atualizaLogos();
         }else {
@@ -286,7 +313,7 @@ public class Menu extends TelaBase{
         }
 
         if (jogar) {
-            while (jogo.getNivelAtualIndex() < jogo.getNiveis().size && contListagem <= 2) {
+            while (jogo.getNivelAtualIndex() < jogo.getNiveis().size && contListagem < 9) {
                 listaNivel(jogo.getNivelAtualIndex());
                 jogo.setNivelAtual(jogo.getNivelAtualIndex() + 1);
                 contListagem += 1;
@@ -324,5 +351,6 @@ public class Menu extends TelaBase{
         pincel.dispose();
         texturaLogoIntegrado.dispose();
         texturaLogoCnpq.dispose();
+        clickBotao.dispose();
     }
 }
