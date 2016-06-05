@@ -79,6 +79,7 @@ public class TelaJogo extends TelaBase {
     private ImageTextButton btnCancelar;
     private BitmapFont fonteAnimaNivel;
     private TextArea caixaTexto;
+    private TextArea caixaErro;
     private boolean inicioJogo = false;
     private boolean executouComandos = false;
     private boolean ganhou = false;
@@ -86,6 +87,7 @@ public class TelaJogo extends TelaBase {
     private static int contTentativas = 0;
     private Label lbContTentativas;
     private int act_tentativas = 0;
+    private Skin skin;
 
     private Sound somSplash;
     private Sound somGameOver;
@@ -108,6 +110,8 @@ public class TelaJogo extends TelaBase {
 
         Gdx.input.setInputProcessor(palcoInformacoes);
 
+        skin = new Skin(Gdx.files.internal("uiskin.json"));
+
         pincel = new SpriteBatch();
 
         initTexturas();
@@ -116,6 +120,7 @@ public class TelaJogo extends TelaBase {
 
         carregarJogoSalvo();
         initCaixaTexto();
+        initCaixaErro();
         initFonteInformacoes();
         initLabelsInformacoes();
         initLabelAnima();
@@ -136,6 +141,7 @@ public class TelaJogo extends TelaBase {
             palcoInformacoes.act();
             palcoNivel.act();
             caixaTexto.act(delta);
+            caixaErro.act(delta);
         }
 
         palcoGameOver.act();
@@ -287,11 +293,11 @@ public class TelaJogo extends TelaBase {
         btnCompilar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCompilar.getPrefWidth() + 330,
                 cameraInformacoes.viewportHeight / 2 - btnCompilar.getPrefHeight() - 250);
 
-        btnExecutar.setPosition(cameraInformacoes.viewportWidth / 2 - btnExecutar.getPrefWidth() + 120,
-                cameraInformacoes.viewportHeight / 2 - btnExecutar.getPrefHeight() - 140);
+        btnExecutar.setPosition(cameraInformacoes.viewportWidth / 2 - btnExecutar.getPrefWidth() + 132,
+                cameraInformacoes.viewportHeight / 1.7f + caixaTexto.getHeight() / 2);
 
         btnCancelar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCancelar.getPrefWidth() + 300,
-                cameraInformacoes.viewportHeight / 2 - btnCancelar.getPrefHeight() - 140);
+                cameraInformacoes.viewportHeight / 1.7f + caixaTexto.getHeight() / 2);
     }
 
     private void initFonteInformacoes() {
@@ -345,11 +351,19 @@ public class TelaJogo extends TelaBase {
     }
 
     private void initCaixaTexto() {
-        skin = new Skin(Gdx.files.internal("uiskin.json"));
 
         caixaTexto = new TextArea(ultimoCodigo, skin);
-        caixaTexto.setSize(600, 350);
-        caixaTexto.setPosition(210, 150);
+        caixaTexto.setSize(600, 300);
+        caixaTexto.setPosition(cameraInformacoes.viewportWidth / 2 - caixaTexto.getWidth() / 2,
+                cameraInformacoes.viewportHeight / 1.7f - caixaTexto.getHeight() / 2);
+    }
+
+    private void initCaixaErro() {
+
+        caixaErro = new TextArea("", skin);
+        caixaErro.setSize(600, 130);
+        caixaErro.setPosition(cameraInformacoes.viewportWidth / 2 - caixaErro.getWidth() / 2,
+                cameraInformacoes.viewportHeight / 2 - caixaTexto.getHeight() + caixaErro.getHeight() / 2);
     }
 
     private int n_tentativas_salvo = 0;
@@ -363,7 +377,6 @@ public class TelaJogo extends TelaBase {
         }
     }
 
-    private Skin skin;
     private void consoleGame() {
         palcoInformacoes.addActor(btnCompilar);
 
@@ -372,6 +385,7 @@ public class TelaJogo extends TelaBase {
             public void clicked(InputEvent event, float x, float y) {
                 clickBotao.play();
                 palcoInformacoes.addActor(caixaTexto);
+                palcoInformacoes.addActor(caixaErro);
 
                 palcoInformacoes.addActor(btnExecutar);
                 palcoInformacoes.addActor(btnCancelar);
@@ -384,18 +398,20 @@ public class TelaJogo extends TelaBase {
         btnExecutar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                clickBotao.play();
-                btnExecutar.remove();
-                btnCancelar.remove();
-
-                btnVoltar.setVisible(true);
-                btnCompilar.setVisible(true);
-
-                contTentativas += 1;
-
-                caixaTexto.remove();
-
                 executarComandos();
+                if (caixaErro.getText().equals("")) {
+                    clickBotao.play();
+                    btnExecutar.remove();
+                    btnCancelar.remove();
+
+                    btnVoltar.setVisible(true);
+                    btnCompilar.setVisible(true);
+
+                    contTentativas += 1;
+
+                    caixaTexto.remove();
+                    caixaErro.remove();
+                }
 
                 if (executouComandos) {
                     btnCompilar.setVisible(false);
@@ -415,33 +431,36 @@ public class TelaJogo extends TelaBase {
                 btnCompilar.setVisible(true);
 
                 caixaTexto.remove();
+                caixaErro.remove();
             }
         });
 
     }
 
+    private String erro = "";
     private void executarComandos() {
 
         try {
-            ComandosJogador comandos = new ComandosJogador();
-
-            String source = caixaTexto.getText();
-            ultimoCodigo = caixaTexto.getText();
-
-            org.mozilla.javascript.Context ctx = org.mozilla.javascript.Context.enter();
-            ctx.setOptimizationLevel(-1); // desabilita a compila��o
-            Scriptable scope = ctx.initStandardObjects();
-            Object wrappedOut = ctx.javaToJS(comandos, scope);
-            ScriptableObject.putProperty(scope, "jogador", wrappedOut);
-            Object result = ctx.evaluateString(scope, source, "<cmd>", 1, null);
             if (!caixaTexto.getText().isEmpty()) {
+                ComandosJogador comandos = new ComandosJogador();
+
+                String source = caixaTexto.getText();
+                ultimoCodigo = caixaTexto.getText();
+
+                org.mozilla.javascript.Context ctx = org.mozilla.javascript.Context.enter();
+                ctx.setOptimizationLevel(-1); // desabilita a compila��o
+                Scriptable scope = ctx.initStandardObjects();
+                Object wrappedOut = ctx.javaToJS(comandos, scope);
+                ScriptableObject.putProperty(scope, "jogador", wrappedOut);
+                Object result = ctx.evaluateString(scope, source, "<cmd>", 1, null);
+                caixaErro.setText("");
                 executouComandos = true;
             }
 
         }catch (Exception ex){
             direcoes.clear(); // limpa as dire��es em caso de erro
-            String erro = ex.getMessage();
-            System.out.println("O erro foi: " + erro);
+            erro = ex.getMessage();
+            caixaErro.setText("O erro foi: " + erro);
         }
 
     }
