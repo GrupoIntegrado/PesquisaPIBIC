@@ -13,8 +13,8 @@ import com.badlogic.gdx.utils.Array;
  */
 public class Jogador {
 
-    private static float DESLOCAMENTO_X;
-    private static float DESLOCAMENTO_Y;
+    private static float DESLOCAMENTO_X = 0;
+    private static float DESLOCAMENTO_Y = 0;
 
     private Sprite sprite;
     private Texture texturaJogador;
@@ -28,6 +28,8 @@ public class Jogador {
     private Array<Texture> trocarTexturaEsquerda = new Array<Texture>();
     private Array<Texture> trocarTexturaCima = new Array<Texture>();
     private Array<Texture> trocarTexturaBaixo = new Array<Texture>();
+    private float LARGURA_JOGADOR = 0;
+    private float ALTURA_JOGADOR = 0;
 
     private Sound somMovJogador;
 
@@ -39,15 +41,18 @@ public class Jogador {
         texturas();
         som();
         sprite = new Sprite(texturaJogador);
+        sprite.setSize(LARGURA_JOGADOR, ALTURA_JOGADOR);
         sprite.setOrigin(0, 0);
-        posicaoX += - sprite.getWidth() / 2;
+        posicaoX += - LARGURA_JOGADOR / 2;
         sprite.setPosition(posicaoX, posicaoY);
         DESLOCAMENTO_X = disX;
-        DESLOCAMENTO_Y = disY - 32;
+        DESLOCAMENTO_Y = disY;
     }
 
     public void texturas() {
         texturaJogador = new Texture("Texturas/jogador.png");
+        LARGURA_JOGADOR = texturaJogador.getWidth() / 2;
+        ALTURA_JOGADOR = texturaJogador.getHeight() / 2;
 
         for (int textD = 1; textD <= 4; textD++) {
             Texture textDireita = new Texture("Texturas/direita" + textD + ".png");
@@ -132,6 +137,7 @@ public class Jogador {
             atualizarEstagioJogador(delta);
             atualizarPosicaoJogador(delta);
 
+
             switch (direcao) {
                 case DIREITA:
                     sprite.setTexture(trocarTexturaDireita.get(estagio));
@@ -150,11 +156,9 @@ public class Jogador {
                     break;
             }
         }
-
         pincel.begin();
-        sprite.draw(pincel);
+            sprite.draw(pincel);
         pincel.end();
-
     }
 
     public Texture getTexturaJogador() {
@@ -220,4 +224,5 @@ public class Jogador {
     public Sound getSomMovJogador() {
         return somMovJogador;
     }
+
 }

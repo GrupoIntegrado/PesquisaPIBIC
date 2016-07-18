@@ -3,6 +3,7 @@ package br.grupointegrado.Projeto;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -50,12 +51,15 @@ public class TelaJogo extends TelaBase {
     private Label lbAnimaGameOver;
     private BitmapFont fonte;
     private Label lbContBlocos;
+    private ImageTextButton btnProximo;
+    private ImageTextButton btnAnterior;
+    private ImageTextButton btnOk;
     private Label lbLevel;
     private Stage palcoInformacoes;
     private Stage palcoNivel;
     private Stage palcoGameOver;
     private float initX = 0;
-    private float initY = 0;
+    private float initY = -10;
     private Sprite splash;
     private Sprite splashBloco;
     private float intervalo_frames = 0;
@@ -71,12 +75,11 @@ public class TelaJogo extends TelaBase {
     private Array<Texture> trocarSplash = new Array<Texture>();
     private Array<Texture> trocarSplashBloco = new Array<Texture>();
     private BitmapFont fonteBotoes;
-    private Texture texturaBotao;
-    private Texture texturaBotaoPressionado;
     private ImageTextButton btnVoltar;
     private ImageTextButton btnCompilar;
     private ImageTextButton btnExecutar;
     private ImageTextButton btnCancelar;
+    private ImageTextButton btnAjuda;
     private BitmapFont fonteAnimaNivel;
     private TextArea caixaTexto;
     private TextArea caixaErro;
@@ -88,11 +91,32 @@ public class TelaJogo extends TelaBase {
     private Label lbContTentativas;
     private int act_tentativas = 0;
     private Skin skin;
+    private Texture texturaBtnExecutar;
+    private Texture texturaBtnExecutar2;
+    private Texture texturaBtnCancelar;
+    private Texture texturaBtnCancelar2;
+    private Texture texturabtnCompilar;
+    private Texture texturabtnCompilar2;
+    private Texture texturabtnVoltar;
+    private Texture texturabtnVoltar2;
+    private Texture texturabtnAjuda;
+    private Texture texturabtnAjuda2;
+    private Texture texturabtnProximo;
+    private Texture texturabtnProximo2;
+    private Texture texturabtnAnterior;
+    private Texture texturabtnAnterior2;
+    private Texture texturabtnOK;
+    private Texture texturabtnOK2;
+
 
     private Sound somSplash;
     private Sound somGameOver;
     private Sound somLevel;
+    private Music somFundo;
     private Sound clickBotao;
+
+    private float TAMANHO_ALTURA;
+    private float TAMANHO_LARGURA;
 
     private Queue<Direcao> direcoes = new ArrayDeque<Direcao>();
 
@@ -102,11 +126,13 @@ public class TelaJogo extends TelaBase {
 
     @Override
     public void show() {
+        cameraInformacoes = new OrthographicCamera(MainJogo.WIDTH, MainJogo.HEIGHT);
+        cameraInformacoes.setToOrtho(false, MainJogo.WIDTH, MainJogo.HEIGHT);
+        cameraInformacoes.update();
 
-        cameraInformacoes = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        palcoInformacoes = new Stage();
-        palcoNivel = new Stage(new FillViewport(cameraInformacoes.viewportWidth, cameraInformacoes.viewportHeight, cameraInformacoes));
-        palcoGameOver = new Stage(new FillViewport(cameraInformacoes.viewportWidth, cameraInformacoes.viewportHeight, cameraInformacoes));
+        palcoInformacoes = new Stage(new FillViewport(MainJogo.WIDTH, MainJogo.HEIGHT));
+        palcoNivel = new Stage(new FillViewport(MainJogo.WIDTH, MainJogo.HEIGHT));
+        palcoGameOver = new Stage(new FillViewport(MainJogo.WIDTH, MainJogo.HEIGHT));
 
         Gdx.input.setInputProcessor(palcoInformacoes);
 
@@ -115,6 +141,9 @@ public class TelaJogo extends TelaBase {
         pincel = new SpriteBatch();
 
         initTexturas();
+        TAMANHO_LARGURA = texturaBloco.getWidth() / 2;
+        TAMANHO_ALTURA = texturaBloco.getHeight() / 2;
+
         initNivel();
         initSom();
 
@@ -123,66 +152,90 @@ public class TelaJogo extends TelaBase {
         initCaixaErro();
         initFonteInformacoes();
         initLabelsInformacoes();
+        initBotaoExecutar();
+        initBotaoCancelar();
+        initBotaoCompilar();
+        initBotaoOK();
+        initBotaoSetaD();
+        initBotaoSetaE();
+        initBotaoVoltar();
+        initBotaoAjuda();
         initLabelAnima();
+        initTextoAjuda();
+        initLousa();
         initJogador();
     }
+
 
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(0f, 0f, 1f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+
+
         if (inicioJogo) {
             atualizarDirecoes();
-            //capturarTeclas();
+            capturarTeclas();
             atualizaNivel();
-            atualizaBotaoVoltar();
             consoleGame();
-            palcoInformacoes.act();
-            palcoNivel.act();
+            atualizaBotaoVoltar();
+            atualizarBotaoAjuda();
             caixaTexto.act(delta);
             caixaErro.act(delta);
+            lousa.act(delta);
         }
-
-        palcoGameOver.act();
-
+        palcoNivel.act();
         atualizarInformacoes();
         atualizarBlocos();
 
-        reenderizaBlocos();
 
-        if (blocoRemovido) {
-            reenderizarSplashBloco(delta);
-            if (estagioBloco == 3) {
-                blocoRemovido = false;
-                estagioBloco = 0;
-            }
-        }
-
+        reenderizarTelaJogo(delta);
 
         if (!gameOver && inicioJogo) {
             classJogador.atualizar(delta, pincel);
-            palcoInformacoes.draw();
-        }
-
-        if (caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.AGUA) && inicioJogo) {
-            gameOver = true;
-
-            if (estagio < 5) {
-                reenderSplashJogador(delta);
-            }
-
-        }else if (ganhou) {
-            reiniciarJogo();
         }
 
         if (!inicioJogo) {
             reenderNivel(delta);
 
         }else if (gameOver) {
+            somFundo.stop();
             reenderGameOver(delta);
         }
 
+        palcoInformacoes.act(delta);
+        palcoInformacoes.draw();
+
+        palcoGameOver.act(delta);
+
+    }
+
+    private void reenderizarTelaJogo(float delta) {
+        pincel.begin();
+
+        pincel.setProjectionMatrix(cameraInformacoes.combined);
+            reenderizaBlocos();
+
+            if (blocoRemovido) {
+                reenderizarSplashBloco(delta);
+                if (estagioBloco == 3) {
+                    blocoRemovido = false;
+                    estagioBloco = 0;
+                }
+            }
+
+            if (caminho.get(yAtual).get(xAtual).getTipo().equals(BlocoTipo.AGUA) && inicioJogo) {
+                gameOver = true;
+
+                if (estagio < 5) {
+                    reenderSplashJogador(delta);
+                }
+
+            }else if (ganhou) {
+                reiniciarJogo();
+            }
+        pincel.end();
     }
 
 
@@ -213,27 +266,25 @@ public class TelaJogo extends TelaBase {
             trocarSplashBloco.add(texturaSplashBloco);
         }
 
-        texturaBotao = new Texture("Texturas/button.png");
-        texturaBotaoPressionado = new Texture("Texturas/button-down.png");
-
         splash = new Sprite(trocarSplash.get(0));
         splashBloco = new Sprite(trocarSplashBloco.get(0));
 
     }
 
+
     private void initSom() {
         somSplash= Gdx.audio.newSound(Gdx.files.internal("Sound/splashbloco.wav"));
         somGameOver = Gdx.audio.newSound(Gdx.files.internal("Sound/gameover.wav"));
         clickBotao = Gdx.audio.newSound(Gdx.files.internal("Sound/clickbotao.wav"));
+        somFundo = Gdx.audio.newMusic(Gdx.files.internal("Sound/somfundo.mp3"));
     }
 
-
     private void initJogador() {
-        float disAndarX = texturaBloco.getWidth();
-        float disAndarY = texturaBloco.getHeight();
+        float disAndarX = TAMANHO_LARGURA;
+        float disAndarY = (TAMANHO_ALTURA / 3) * 2;
 
-        float posInicialJX = initX + jogo.getNivelAtual().getPosicaoInicial().x * texturaBloco.getWidth() - texturaBloco.getWidth() / 2;
-        float posInicialJY = initY + jogo.getNivelAtual().getPosicaoInicial().y * (texturaBloco.getHeight() - texturaBloco.getHeight() / 3);
+        float posInicialJX = (initX + jogo.getNivelAtual().getPosicaoInicial().x * TAMANHO_LARGURA - (TAMANHO_LARGURA / 2));
+        float posInicialJY = (initY + jogo.getNivelAtual().getPosicaoInicial().y * TAMANHO_ALTURA - 78) - (TAMANHO_ALTURA - 78 / 2);
 
         classJogador = new Jogador(posInicialJX, posInicialJY, disAndarX, disAndarY);
     }
@@ -242,6 +293,109 @@ public class TelaJogo extends TelaBase {
         for (BlocoTipo[] linha : jogo.getNivelAtual().getBlocos()) {
             criarLabirinto(linha[0], linha[1], linha[2], linha[3], linha[4], linha[5], linha[6], linha[7], linha[8], linha[9], linha[10], linha[11], linha[12]);
         }
+    }
+
+    private void initBotaoExecutar(){
+        texturaBtnExecutar = new Texture("Texturas/jogar.png");
+        texturaBtnExecutar2 = new Texture("Texturas/jogar2.png");
+
+        ImageTextButton.ImageTextButtonStyle estExecutar = new ImageTextButton.ImageTextButtonStyle();
+        estExecutar.font = fonteBotoes;
+        estExecutar.up = new SpriteDrawable(new Sprite(texturaBtnExecutar));
+        estExecutar.down = new SpriteDrawable(new Sprite(texturaBtnExecutar2));
+
+        btnExecutar = new ImageTextButton("", estExecutar);
+    }
+
+    private void initBotaoCancelar(){
+        texturaBtnCancelar = new Texture("Texturas/sair.png");
+        texturaBtnCancelar2 = new Texture("Texturas/sair2.png");
+
+        ImageTextButton.ImageTextButtonStyle estCancelar = new ImageTextButton.ImageTextButtonStyle();
+        estCancelar.font = fonteBotoes;
+        estCancelar.up = new SpriteDrawable(new Sprite(texturaBtnCancelar));
+        estCancelar.down = new SpriteDrawable(new Sprite(texturaBtnCancelar2));
+
+
+        btnCancelar = new ImageTextButton("", estCancelar);
+    }
+
+    private void initBotaoCompilar(){
+        texturabtnCompilar = new Texture("Texturas/compilar.png");
+        texturabtnCompilar2 = new Texture("Texturas/compilar2.png");
+
+        ImageTextButton.ImageTextButtonStyle estCompilar = new ImageTextButton.ImageTextButtonStyle();
+        estCompilar.font = fonteBotoes;
+        estCompilar.up = new SpriteDrawable(new Sprite(texturabtnCompilar));
+        estCompilar.down = new SpriteDrawable(new Sprite(texturabtnCompilar2));
+
+
+        btnCompilar = new ImageTextButton("", estCompilar);
+    }
+
+    private void initBotaoVoltar(){
+        texturabtnVoltar = new Texture("Texturas/voltar.png");
+        texturabtnVoltar2 = new Texture("Texturas/voltar2.png");
+
+        ImageTextButton.ImageTextButtonStyle estVoltar = new ImageTextButton.ImageTextButtonStyle();
+        estVoltar.font = fonteBotoes;
+        estVoltar.up = new SpriteDrawable(new Sprite(texturabtnVoltar));
+        estVoltar.down = new SpriteDrawable(new Sprite(texturabtnVoltar2));
+
+
+        btnVoltar = new ImageTextButton("", estVoltar);
+    }
+
+    private void initBotaoAjuda(){
+        texturabtnAjuda = new Texture("Texturas/ajuda.png");
+        texturabtnAjuda2 = new Texture("Texturas/ajuda2.png");
+
+        ImageTextButton.ImageTextButtonStyle estAjuda = new ImageTextButton.ImageTextButtonStyle();
+        estAjuda.font = fonteBotoes;
+        estAjuda.up = new SpriteDrawable(new Sprite(texturabtnAjuda));
+        estAjuda.down = new SpriteDrawable(new Sprite(texturabtnAjuda2));
+
+
+        btnAjuda = new ImageTextButton("", estAjuda);
+    }
+
+    private void initBotaoOK(){
+        texturabtnOK = new Texture("Texturas/ok.png");
+        texturabtnOK2 = new Texture("Texturas/ok2.png");
+
+        ImageTextButton.ImageTextButtonStyle estOK = new ImageTextButton.ImageTextButtonStyle();
+        estOK.font = fonteBotoes;
+        estOK.up = new SpriteDrawable(new Sprite(texturabtnOK));
+        estOK.down = new SpriteDrawable(new Sprite(texturabtnOK2));
+
+
+        btnOk = new ImageTextButton("", estOK);
+    }
+
+    private void initBotaoSetaD(){
+        texturabtnProximo = new Texture("Texturas/setad.png");
+        texturabtnProximo2 = new Texture("Texturas/setad2.png");
+
+        ImageTextButton.ImageTextButtonStyle estD = new ImageTextButton.ImageTextButtonStyle();
+        estD.font = fonteBotoes;
+        estD.up = new SpriteDrawable(new Sprite(texturabtnProximo));
+        estD.down = new SpriteDrawable(new Sprite(texturabtnProximo2));
+
+
+        btnProximo = new ImageTextButton("", estD);
+    }
+
+    private void initBotaoSetaE(){
+        texturabtnAnterior = new Texture("Texturas/setae.png");
+        texturabtnAnterior2 = new Texture("Texturas/setae2.png");
+
+        ImageTextButton.ImageTextButtonStyle estE = new ImageTextButton.ImageTextButtonStyle();
+        estE.font = fonteBotoes;
+        estE.up = new SpriteDrawable(new Sprite(texturabtnAnterior));
+        estE.down = new SpriteDrawable(new Sprite(texturabtnAnterior2));
+
+
+        btnAnterior = new ImageTextButton("", estE);
     }
 
     private void initLabelsInformacoes() {
@@ -260,61 +414,66 @@ public class TelaJogo extends TelaBase {
 
         ImageTextButton.ImageTextButtonStyle estilo = new ImageTextButton.ImageTextButtonStyle();
         estilo.font = fonteBotoes;
-        estilo.up = new SpriteDrawable(new Sprite(texturaBotao));
-        estilo.down = new SpriteDrawable(new Sprite(texturaBotaoPressionado));
-
-        btnVoltar = new ImageTextButton("  Voltar  ", estilo);
-
-        btnCompilar = new ImageTextButton("  Compilar  ", estilo);
-
-        btnExecutar = new ImageTextButton("  Executar  ", estilo);
-
-        btnCancelar = new ImageTextButton("  Cancelar  ", estilo);
     }
 
     private int level;
     private void atualizarInformacoes() {
-        lbContBlocos.setPosition(cameraInformacoes.viewportWidth / 2 - 19, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
+        lbContBlocos.setPosition(initX + cameraInformacoes.viewportWidth / 2 - lbContBlocos.getPrefWidth(),cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
         String blocos_total = "" + cont_blocos_remover;
         lbContBlocos.setText(cont_bloco_removido + "/" + blocos_total);
 
-        lbLevel.setPosition(cameraInformacoes.viewportWidth / 6, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
+        lbLevel.setPosition(initX, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
         level = jogo.getNivelAtualIndex() + 1;
         lbLevel.setText("LEVEL " + level);
 
-        lbContTentativas.setPosition(cameraInformacoes.viewportWidth / 2 + 250, cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
+        lbContTentativas.setPosition(initX + cameraInformacoes.viewportWidth - lbContTentativas.getPrefWidth(), cameraInformacoes.viewportHeight - lbContBlocos.getHeight());
         act_tentativas = contTentativas + n_tentativas_salvo;
 
         lbContTentativas.setText("TENTATIVA(S): " + act_tentativas);
 
-        btnVoltar.setPosition(cameraInformacoes.viewportWidth / 2 - btnVoltar.getPrefWidth() + 470,
-                cameraInformacoes.viewportHeight / 2 - btnVoltar.getPrefHeight() - 250);
+        btnVoltar.setPosition(MainJogo.WIDTH / 2 - btnVoltar.getPrefWidth() / 2 + btnCompilar.getPrefWidth(),
+                MainJogo.HEIGHT / 25);
 
-        btnCompilar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCompilar.getPrefWidth() + 330,
-                cameraInformacoes.viewportHeight / 2 - btnCompilar.getPrefHeight() - 250);
+        btnCompilar.setPosition(MainJogo.WIDTH / 2 - btnCompilar.getPrefWidth() / 2 - 5,
+        MainJogo.HEIGHT / 25);
 
-        btnExecutar.setPosition(cameraInformacoes.viewportWidth / 2 - btnExecutar.getPrefWidth() + 132,
-                cameraInformacoes.viewportHeight / 1.7f + caixaTexto.getHeight() / 2);
+        btnExecutar.setPosition(MainJogo.WIDTH / 2 + caixaTexto.getPrefWidth()- btnExecutar.getPrefWidth() - btnCancelar.getPrefHeight() - 5,
+                MainJogo.HEIGHT / 1.7f + caixaTexto.getHeight() / 2);
 
-        btnCancelar.setPosition(cameraInformacoes.viewportWidth / 2 - btnCancelar.getPrefWidth() + 300,
-                cameraInformacoes.viewportHeight / 1.7f + caixaTexto.getHeight() / 2);
+        btnCancelar.setPosition(MainJogo.WIDTH / 2 + caixaTexto.getPrefWidth() - btnCancelar.getPrefWidth(),
+                MainJogo.HEIGHT / 1.7f + caixaTexto.getHeight() / 2);
+
+        btnAjuda.setPosition(MainJogo.WIDTH - MainJogo.WIDTH + btnAjuda.getPrefWidth(),
+                MainJogo.HEIGHT / 25);
+
+        lousa.setPosition(MainJogo.WIDTH / 2 - lousa.getWidth() / 2,
+                MainJogo.HEIGHT / 2 - lousa.getHeight() / 2);
+
+        btnProximo.setPosition(MainJogo.WIDTH / 2 + lousa.getWidth() / 2 + 5,
+                MainJogo.HEIGHT / 2 - btnProximo.getHeight() / 2);
+
+        btnAnterior.setPosition(MainJogo.WIDTH / 2 - btnAnterior.getWidth() - lousa.getWidth() / 2 - 5,
+                MainJogo.HEIGHT / 2 - btnAnterior.getHeight() / 2);
+
+        btnOk.setPosition(MainJogo.WIDTH / 2 - btnOk.getWidth() / 2,
+                MainJogo.HEIGHT / 2 - lousa.getHeight() / 2);
     }
 
     private void initFonteInformacoes() {
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/roboto.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
         param.color = Color.WHITE;
-        param.size = 24;
+        param.size = 18;
         param.shadowOffsetX = 2;
         param.shadowOffsetY = 2;
 
         fonte = generator.generateFont(param);
 
-        param.size = 32;
+        param.size = 16;
         param.color = Color.WHITE;
         fonteBotoes = generator.generateFont(param);
 
-        param.size = 72;
+        param.size = 36;
         param.color = Color.WHITE;
         fonteAnimaNivel = generator.generateFont(param);
 
@@ -343,6 +502,7 @@ public class TelaJogo extends TelaBase {
             public void clicked(InputEvent event, float x, float y) {
                 clickBotao.play();
                 inicioJogo = false;
+                somFundo.stop();
                 carregou = false;
                 jogo.setNivelAtual(0);
                 jogo.setScreen(new Menu(jogo));
@@ -350,18 +510,136 @@ public class TelaJogo extends TelaBase {
         });
     }
 
+    private Array<String> texto = new Array<String>();
+    private void initTextoAjuda() {
+        for (int i = 0; i < 3; i++) {
+            if (i == 0) {
+                texto.add("Objetivo do jogo\n" +
+                        "\n" +
+                        "Mova o personagem ate o bloco vermelho removendo todos os outros blocos. Os blocos são removidos quando o personagem passa por cima deles. Voce ira encontrar dois tipos de blocos, no qual o bloco branco so e possível passar uma vez, enquanto o preto e possível passar duas vezes.\n" +
+                        "\n" +
+                        "O nivel sera concluído quando o personagem chegar o bloco vermelho e tiver removido todos os outros blocos. Se o personagem nao chegar ao bloco vermelho, ou cair na agua, sera Game Over!");
+            }else if (i == 1) {
+                texto.add("Comandos\n" +
+                        "\n" +
+                        "Para movimentar o personagem voce deve utilizar instrucoes de programacao na linguagem JavaScript. Para isso voce deve acionar o objeto jogador e entao chamar a funcao desejada.\n" +
+                        "\n" +
+                        "Funções disponiveis:\n" +
+                        "\n" +
+                        "    jogador.cima()\n" +
+                        "    jogador.baixo()\n" +
+                        "    jogador.direita()\n" +
+                        "    jogador.esquerda()\n");
+            }else if (i == 2) {
+                texto.add("Dicas\n" +
+                        "\n" +
+                        "Voce e livre para utilizar todos os recursos disponíveis na linguagem JavaScript, como lacos de repeticao:\n" +
+                        "\n" +
+                        "// repetir 10 vezes\n" +
+                        "for (i = 0; i < 10; i++) {\n" +
+                        "    jogador.direita();\n" +
+                        "}\n" +
+                        "\n" +
+                        "Ou ate mesmo declaração de funcoes:\n" +
+                        "\n" +
+                        "// declarando a funcao\n" +
+                        "function cimaDireita(){\n" +
+                        "    jogador.cima();\n" +
+                        "    jogador.direita();\n" +
+                        "}\n" +
+                        "// chamando a funcao\n" +
+                        "cimaDireita();");
+            }
+        }
+    }
+
+    int cont = 0;
+    TextArea lousa;
+    private void initLousa() {
+        lousa = new TextArea("", skin);
+
+        lousa.setSize(MainJogo.WIDTH / 1.5f, MainJogo.HEIGHT);
+        lousa.setColor(Color.BLUE);
+        lousa.setDisabled(true);
+        lousa.setText(texto.get(cont));
+    }
+    private void atualizarBotaoAjuda() {
+
+        palcoInformacoes.addActor(btnAjuda);
+
+        btnAjuda.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                lbLevel.setVisible(false);
+                lbContBlocos.setVisible(false);
+                lbContTentativas.setVisible(false);
+                btnCompilar.setVisible(false);
+                btnVoltar.setVisible(false);
+                btnAjuda.setVisible(false);
+
+                palcoInformacoes.addActor(btnProximo);
+                palcoInformacoes.addActor(btnAnterior);
+
+                palcoInformacoes.addActor(lousa);
+                palcoInformacoes.addActor(btnOk);
+            }
+        });
+
+
+        btnProximo.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (cont < texto.size - 1 && btnProximo.isChecked()) {
+                    cont += 1;
+                    lousa.setText(texto.get(cont));
+                }
+                btnProximo.setChecked(false);
+            }
+        });
+
+        btnAnterior.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (cont > 0 && btnAnterior.isChecked()) {
+                    cont += -1;
+                    lousa.setText(texto.get(cont));
+                }
+                btnAnterior.setChecked(false);
+            }
+        });
+
+        btnOk.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                lousa.remove();
+                btnProximo.remove();
+                btnAnterior.remove();
+                lbLevel.setVisible(true);
+                lbContBlocos.setVisible(true);
+                lbContTentativas.setVisible(true);
+                btnOk.remove();
+
+                btnAjuda.setVisible(true);
+                btnCompilar.setVisible(true);
+                btnVoltar.setVisible(true);
+            }
+        });
+    }
+
     private void initCaixaTexto() {
 
         caixaTexto = new TextArea(ultimoCodigo, skin);
-        caixaTexto.setSize(600, 300);
+        caixaTexto.setSize(MainJogo.WIDTH / 2, MainJogo.HEIGHT / 2);
         caixaTexto.setPosition(cameraInformacoes.viewportWidth / 2 - caixaTexto.getWidth() / 2,
                 cameraInformacoes.viewportHeight / 1.7f - caixaTexto.getHeight() / 2);
     }
 
     private void initCaixaErro() {
 
-        caixaErro = new TextArea("", skin);
-        caixaErro.setSize(600, 130);
+        caixaErro = new TextArea(erro, skin);
+        caixaErro.setSize(MainJogo.WIDTH / 2, MainJogo.HEIGHT / 4.5f);
+        caixaErro.setColor(Color.RED);
+        caixaErro.setDisabled(true);
         caixaErro.setPosition(cameraInformacoes.viewportWidth / 2 - caixaErro.getWidth() / 2,
                 cameraInformacoes.viewportHeight / 2 - caixaTexto.getHeight() + caixaErro.getHeight() / 2);
     }
@@ -383,7 +661,6 @@ public class TelaJogo extends TelaBase {
         btnCompilar.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                clickBotao.play();
                 palcoInformacoes.addActor(caixaTexto);
                 palcoInformacoes.addActor(caixaErro);
 
@@ -392,6 +669,7 @@ public class TelaJogo extends TelaBase {
 
                 btnVoltar.setVisible(false);
                 btnCompilar.setVisible(false);
+                btnAjuda.setVisible(false);
             }
         });
 
@@ -429,6 +707,7 @@ public class TelaJogo extends TelaBase {
 
                 btnVoltar.setVisible(true);
                 btnCompilar.setVisible(true);
+                btnAjuda.setVisible(true);
 
                 caixaTexto.remove();
                 caixaErro.remove();
@@ -437,7 +716,7 @@ public class TelaJogo extends TelaBase {
 
     }
 
-    private String erro = "";
+    private String erro = "Mensagens de erro aparecerao aqui...";
     private void executarComandos() {
 
         try {
@@ -460,9 +739,20 @@ public class TelaJogo extends TelaBase {
         }catch (Exception ex){
             direcoes.clear(); // limpa as dire��es em caso de erro
             erro = ex.getMessage();
-            caixaErro.setText("O erro foi: " + erro);
+            caixaErro.setText(tratarErroJavascript(erro));
         }
 
+    }
+
+
+    private String tratarErroJavascript(String mensagem) {
+        String[] partes = mensagem.split("<cmd>");
+        if (partes.length < 2) {
+            return "Erro desconhecido: \n\n" + mensagem;
+        }
+        String descricao = partes[0].substring(0, partes[0].length() - 1);
+        String linha = partes[1].substring(0, partes[1].length() - 1);
+        return "Erro na linha " + linha + " :\n\n" + descricao;
     }
 
     private void atualizarPosicaoSplashJogador() {
@@ -510,10 +800,9 @@ public class TelaJogo extends TelaBase {
         atualizarPosicaoSplashJogador();
 
         splash.setTexture(trocarSplash.get(estagio));
+        splash.setSize(trocarSplash.get(estagio).getWidth() / 2, trocarSplash.get(estagio).getHeight() / 2);
 
-        pincel.begin();
         splash.draw(pincel);
-        pincel.end();
     }
 
     private int cont_bloco_removido = 0;
@@ -522,7 +811,6 @@ public class TelaJogo extends TelaBase {
                 (cont_bloco_removido == cont_blocos_remover) && (classJogador.getDirecao().equals(Direcao.PARADO))) {
             ganhou = true;
             int proxNivel = jogo.getNivelAtualIndex() + 1;
-            System.out.println(proxNivel);
             if (proxNivel < jogo.getNiveis().size) {
                 salvarLevel();
                 jogo.setNivelAtual(proxNivel);
@@ -556,8 +844,8 @@ public class TelaJogo extends TelaBase {
         caminho.add(linha);
     }
 
+
     private void reenderizaBlocos() {
-        pincel.begin();
         Sprite spriteBloco = new Sprite(texturaAgua);
         for (int i = caminho.size - 1; i >= 0 ; i--) {
             Array<Bloco> linha = caminho.get(i);
@@ -577,26 +865,28 @@ public class TelaJogo extends TelaBase {
                         spriteBloco.setTexture(texturaFinal);
                         break;
                 }
+
                 atualizarBlocos(bloco, spriteBloco);
                 spriteBloco.draw(pincel);
             }
         }
-        pincel.end();
     }
 
     private void atualizarBlocos(Bloco bloco, Sprite spriteBloco) {
         Rectangle recJogador = new Rectangle();
         Rectangle recBloco = new Rectangle();
 
-        recJogador.set(classJogador.getX(), classJogador.getY(), classJogador.getWidth() / 2,
-            classJogador.getHeight() / 2);
+        spriteBloco.setSize(TAMANHO_LARGURA, TAMANHO_ALTURA);
 
-        recBloco.set(initX + bloco.getPosicao().x * (texturaBloco.getWidth() - 4) + 8,
-                initY + bloco.getPosicao().y * (texturaBloco.getHeight() - 32) + 32,
-                texturaBloco.getWidth(), texturaBloco.getHeight());
+        spriteBloco.setPosition(initX + bloco.getPosicao().x * (spriteBloco.getTexture().getWidth() - 50),
+                initY + bloco.getPosicao().y * (spriteBloco.getTexture().getHeight() - 78));
 
-        spriteBloco.setPosition(initX + bloco.getPosicao().x * spriteBloco.getTexture().getWidth(),
-                initY + bloco.getPosicao().y * (spriteBloco.getTexture().getHeight() - 32));
+        recJogador.set(classJogador.getX() + classJogador.getWidth() / 3, classJogador.getY() - classJogador.getHeight() / 10, classJogador.getWidth() / 3,
+                classJogador.getHeight() / 7);
+
+        recBloco.set(initX + bloco.getPosicao().x * (spriteBloco.getTexture().getWidth() - 50),
+                initY + 18 + bloco.getPosicao().y * (spriteBloco.getTexture().getHeight() - 78),
+                spriteBloco.getWidth(), spriteBloco.getHeight() - 18);
 
         controlarPosicao(bloco, recBloco, recJogador);
     }
@@ -651,25 +941,30 @@ public class TelaJogo extends TelaBase {
 
 
     private float y = 100;
-    private float velocidadeNivel = 150;
+    private float velocidadeNivel = 80;
     private void reenderNivel(float delta) {
-        if (y <= cameraInformacoes.viewportHeight / 1.8f) {
+        if (y <= cameraInformacoes.viewportHeight / 1.5f) {
             y += velocidadeNivel * delta;
             lbAnimaLevel.setPosition(cameraInformacoes.viewportWidth / 2 - lbAnimaLevel.getPrefWidth() / 2, y);
             lbAnimaLevel.setText("LEVEL " + level);
             palcoNivel.draw();
-        }else inicioJogo = true;
+        }else {
+            inicioJogo = true;
+            somFundo.play();
+            somFundo.setVolume(0.5f);
+            somFundo.setLooping(true);
+        }
     }
 
 
     private float yg = 100;
-    private int velocidadeGameOver = 75;
+    private int velocidadeGameOver = 45;
     private void reenderGameOver(float delta) {
         if (yg == 100) {
             somGameOver.play();
         }
 
-        if (yg <= cameraInformacoes.viewportHeight / 1.8f) {
+        if (yg <= cameraInformacoes.viewportHeight / 1.5f) {
             yg += velocidadeGameOver  * delta;
             lbAnimaGameOver.setPosition(cameraInformacoes.viewportWidth / 2 - lbAnimaGameOver.getPrefWidth() / 2, yg);
             lbAnimaGameOver.setText("GAME OVER");
@@ -699,23 +994,23 @@ public class TelaJogo extends TelaBase {
 
         switch (classJogador.getDirecao()) {
             case ESQUERDA:
-                x = initX + xAnterior * texturaBloco.getWidth();
-                y = initY + yAtual * (texturaBloco.getHeight() - 32) + texturaBloco.getHeight() / 2;
+                x = initX + xAnterior * TAMANHO_LARGURA;
+                y = initY + yAtual * (TAMANHO_ALTURA - 21) + TAMANHO_ALTURA / 2;
                 splashBloco.setPosition(x, y);
                 break;
             case DIREITA:
-                x = initX + xAnterior * texturaBloco.getWidth();
-                y = initY + yAtual * (texturaBloco.getHeight() - 32) + texturaBloco.getHeight() / 2;
+                x = initX + xAnterior * TAMANHO_LARGURA;
+                y = initY + yAtual * (TAMANHO_ALTURA - 21) + TAMANHO_ALTURA / 2;
                 splashBloco.setPosition(x, y);
                 break;
             case CIMA:
-                x = initX + xAtual * texturaBloco.getWidth();
-                y = initY + yAnterior * (texturaBloco.getHeight() - 32) + texturaBloco.getHeight() / 2;
+                x = initX + xAtual * TAMANHO_LARGURA;
+                y = initY + yAnterior * (TAMANHO_ALTURA - 21) + TAMANHO_ALTURA / 2;
                 splashBloco.setPosition(x, y);
                 break;
             case BAIXO:
-                x = initX + xAtual * texturaBloco.getWidth();
-                y = initY + yAnterior * (texturaBloco.getHeight() - 32) + texturaBloco.getHeight() / 2;
+                x = initX + xAtual * TAMANHO_LARGURA;
+                y = initY + yAnterior * (TAMANHO_ALTURA - 21) + TAMANHO_ALTURA / 2;
                 splashBloco.setPosition(x, y);
                 break;
         }
@@ -734,16 +1029,14 @@ public class TelaJogo extends TelaBase {
         atualizarEstagioSplashBloco(delta);
 
         splashBloco.setTexture(trocarSplashBloco.get(estagioBloco));
+        splashBloco.setSize(trocarSplash.get(estagioBloco).getWidth() / 1.2f, trocarSplash.get(estagioBloco).getHeight());
 
-        pincel.begin();
         splashBloco.draw(pincel);
-        pincel.end();
     }
 
     @Override
     public void resize(int width, int height) {
-        palcoInformacoes.getViewport().update(width, height);
-        palcoInformacoes.getCamera().update();
+        palcoInformacoes.getViewport().update(width,height);
     }
 
     @Override
@@ -762,10 +1055,24 @@ public class TelaJogo extends TelaBase {
         texturaBloco.dispose();
         texturaBloco2.dispose();
         texturaAgua.dispose();
-        texturaBotao.dispose();
-        texturaBotaoPressionado.dispose();
         skin.dispose();
         clickBotao.dispose();
+        texturaBtnExecutar.dispose();
+        texturaBtnExecutar2.dispose();
+        texturaBtnCancelar.dispose();
+        texturaBtnCancelar2.dispose();
+        texturabtnVoltar.dispose();
+        texturabtnVoltar2.dispose();
+        texturabtnCompilar.dispose();
+        texturabtnCompilar2.dispose();
+        texturabtnAnterior.dispose();
+        texturabtnAnterior2.dispose();
+        texturabtnProximo.dispose();
+        texturabtnProximo2.dispose();
+        texturabtnOK.dispose();
+        texturabtnOK2.dispose();
+        texturabtnAjuda.dispose();
+        texturabtnAjuda2.dispose();
         for (int i = 1; i <= 6; i++) {
             texturaSplash.dispose();
         }
@@ -790,6 +1097,7 @@ public class TelaJogo extends TelaBase {
         palcoInformacoes.dispose();
         palcoNivel.dispose();
         palcoGameOver.dispose();
+        somFundo.dispose();
         pincel.dispose();
     }
 
@@ -809,6 +1117,11 @@ public class TelaJogo extends TelaBase {
         public void baixo(){
             direcoes.add(Direcao.BAIXO);
             System.out.println(Direcao.BAIXO);
+        }
+
+        @Override
+        public String toString() {
+            return "Jogador";
         }
     }
 }

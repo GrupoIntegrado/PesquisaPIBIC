@@ -7,6 +7,8 @@ import com.badlogic.gdx.utils.Array;
 
 public class MainJogo extends Game{
 
+	public static int WIDTH = 640, HEIGHT = 360;
+
 	private Array<Nivel> niveis = new Array<Nivel>();
 
 	private int nivelAtual = 0;
@@ -15,7 +17,8 @@ public class MainJogo extends Game{
 	public void create () {
 		criarNiveis();
 		setScreen(new Menu(this));
-	}
+		//setScreen(new TelaJogo(this));
+}
 
 	public Array<Nivel> getNiveis() {
 		return niveis;
@@ -36,7 +39,6 @@ public class MainJogo extends Game{
 	public void setNivelAtual(int nivelAtual) {
 		this.nivelAtual = nivelAtual;
 	}
-
 
 	private void criarNiveis() {
 
