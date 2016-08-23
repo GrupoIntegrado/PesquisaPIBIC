@@ -50,24 +50,24 @@ public class Jogador {
     }
 
     public void texturas() {
-        texturaJogador = new Texture("Texturas/jogador.png");
+        texturaJogador = new Texture("Texturas/jogador/jogador.png");
         LARGURA_JOGADOR = texturaJogador.getWidth() / 2;
         ALTURA_JOGADOR = texturaJogador.getHeight() / 2;
 
         for (int textD = 1; textD <= 4; textD++) {
-            Texture textDireita = new Texture("Texturas/direita" + textD + ".png");
+            Texture textDireita = new Texture("Texturas/jogador/direita" + textD + ".png");
             trocarTexturaDireita.add(textDireita);
         }
         for (int textE = 1; textE <= 4; textE++) {
-            Texture textEsquerda = new Texture("Texturas/esquerda" + textE + ".png");
+            Texture textEsquerda = new Texture("Texturas/jogador/esquerda" + textE + ".png");
             trocarTexturaEsquerda.add(textEsquerda);
         }
         for (int textC = 1; textC <= 4; textC++) {
-            Texture textCima = new Texture("Texturas/cima" + textC + ".png");
+            Texture textCima = new Texture("Texturas/jogador/cima" + textC + ".png");
             trocarTexturaCima.add(textCima);
         }
         for (int textB = 1; textB <= 4; textB++) {
-            Texture textBaixo = new Texture("Texturas/baixo" + textB + ".png");
+            Texture textBaixo = new Texture("Texturas/jogador/baixo" + textB + ".png");
             trocarTexturaBaixo.add(textBaixo);
         }
     }
