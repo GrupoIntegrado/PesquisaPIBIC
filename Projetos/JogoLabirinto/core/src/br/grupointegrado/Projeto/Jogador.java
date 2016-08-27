@@ -1,7 +1,5 @@
 package br.grupointegrado.Projeto;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -13,8 +11,8 @@ import com.badlogic.gdx.utils.Array;
  */
 public class Jogador {
 
-    private static float DESLOCAMENTO_X = 0;
-    private static float DESLOCAMENTO_Y = 0;
+    private static float DESLOCAMENTO_X;
+    private static float DESLOCAMENTO_Y;
 
     private Sprite sprite;
     private Texture texturaJogador;
@@ -28,63 +26,46 @@ public class Jogador {
     private Array<Texture> trocarTexturaEsquerda = new Array<Texture>();
     private Array<Texture> trocarTexturaCima = new Array<Texture>();
     private Array<Texture> trocarTexturaBaixo = new Array<Texture>();
-    private float LARGURA_JOGADOR = 0;
-    private float ALTURA_JOGADOR = 0;
 
-    private Sound somMovJogador;
+    private static float WIGTH_JOGADOR = 27;
+    private static float HEIGHT_JOGADOR = 48;
 
     public Jogador(float posicaoX, float posicaoY, float disX, float disY){
-        initJogador(posicaoX, posicaoY, disX, disY);
-    }
-
-    public void initJogador(float posicaoX, float posicaoY, float disX, float disY) {
         texturas();
-        som();
         sprite = new Sprite(texturaJogador);
-        sprite.setSize(LARGURA_JOGADOR, ALTURA_JOGADOR);
-        sprite.setOrigin(0, 0);
-        posicaoX += - LARGURA_JOGADOR / 2;
-        sprite.setPosition(posicaoX, posicaoY);
+        sprite.setSize(WIGTH_JOGADOR, HEIGHT_JOGADOR);
+        sprite.setPosition(posicaoX - (sprite.getWidth() / 2), posicaoY);
         DESLOCAMENTO_X = disX;
         DESLOCAMENTO_Y = disY;
     }
 
     public void texturas() {
-        texturaJogador = new Texture("Texturas/jogador/jogador.png");
-        LARGURA_JOGADOR = texturaJogador.getWidth() / 2;
-        ALTURA_JOGADOR = texturaJogador.getHeight() / 2;
+        texturaJogador = new Texture("Texturas/jogador.png");
 
         for (int textD = 1; textD <= 4; textD++) {
-            Texture textDireita = new Texture("Texturas/jogador/direita" + textD + ".png");
+            Texture textDireita = new Texture("Texturas/direita" + textD + ".png");
             trocarTexturaDireita.add(textDireita);
         }
         for (int textE = 1; textE <= 4; textE++) {
-            Texture textEsquerda = new Texture("Texturas/jogador/esquerda" + textE + ".png");
+            Texture textEsquerda = new Texture("Texturas/esquerda" + textE + ".png");
             trocarTexturaEsquerda.add(textEsquerda);
         }
         for (int textC = 1; textC <= 4; textC++) {
-            Texture textCima = new Texture("Texturas/jogador/cima" + textC + ".png");
+            Texture textCima = new Texture("Texturas/cima" + textC + ".png");
             trocarTexturaCima.add(textCima);
         }
         for (int textB = 1; textB <= 4; textB++) {
-            Texture textBaixo = new Texture("Texturas/jogador/baixo" + textB + ".png");
+            Texture textBaixo = new Texture("Texturas/baixo" + textB + ".png");
             trocarTexturaBaixo.add(textBaixo);
         }
     }
 
-
-    public void som() {
-        somMovJogador = Gdx.audio.newSound(Gdx.files.internal("Sound/movpersonagem.mp3"));
-    }
-
     public void atualizarEstagioJogador(float delta) {
         if (intervalo_frames >= tempo_intervalo) {
-            somMovJogador.play();
             intervalo_frames = 0;
             estagio ++;
-            if (estagio > 3) {
+            if (estagio > 3)
                 estagio = 0;
-            }
         } else {
             intervalo_frames = intervalo_frames + delta;
         }
@@ -99,6 +80,7 @@ public class Jogador {
                     y = sprite.getY();
                     sprite.setPosition(x, y);
                 } else {
+                    sprite.setPosition(sprite.getX() - 1, sprite.getY());
                     setDirecao(Direcao.PARADO);
                 }
                 break;
@@ -108,6 +90,7 @@ public class Jogador {
                     y = sprite.getY();
                     sprite.setPosition(x, y);
                 }else {
+                    sprite.setPosition(sprite.getX() + 1, sprite.getY());
                     setDirecao(Direcao.PARADO);
                 }
                 break;
@@ -117,6 +100,7 @@ public class Jogador {
                     y = sprite.getY() + velocidade * delta;
                     sprite.setPosition(x, y);
                 }else {
+                    sprite.setPosition(sprite.getX(), sprite.getY() - 1);
                     setDirecao(Direcao.PARADO);
                 }
                 break;
@@ -126,6 +110,7 @@ public class Jogador {
                     y = sprite.getY() - velocidade * delta;
                     sprite.setPosition(x, y);
                 }else {
+                    sprite.setPosition(sprite.getX(), sprite.getY() + 1);
                     setDirecao(Direcao.PARADO);
                 }
                 break;
@@ -136,7 +121,6 @@ public class Jogador {
         if (direcao != Direcao.PARADO) {
             atualizarEstagioJogador(delta);
             atualizarPosicaoJogador(delta);
-
 
             switch (direcao) {
                 case DIREITA:
@@ -156,9 +140,11 @@ public class Jogador {
                     break;
             }
         }
+
         pincel.begin();
-            sprite.draw(pincel);
+        sprite.draw(pincel);
         pincel.end();
+
     }
 
     public Texture getTexturaJogador() {
@@ -220,9 +206,4 @@ public class Jogador {
     public float getHeight(){
         return sprite.getHeight();
     }
-
-    public Sound getSomMovJogador() {
-        return somMovJogador;
-    }
-
 }
