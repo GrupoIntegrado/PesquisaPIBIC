@@ -30,4 +30,5 @@ public class Bloco {
     public void setTipo(BlocoTipo tipo) {
         this.tipo = tipo;
     }
+
 }
